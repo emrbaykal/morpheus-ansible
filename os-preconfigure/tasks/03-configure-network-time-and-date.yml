@@ -1,0 +1,51 @@
+---
+
+- name: new variable with current date time
+  set_fact: temp="{{lookup('pipe','date \"+%Y-%m-%d %H:%M\"')}}"
+  delegate_to: localhost
+
+- name: Current time
+  debug: msg="Current date and time is {{temp}}"
+
+- name: Populate service facts
+  service_facts:
+
+- name: Set desired time
+  command: "timedatectl set-time '{{ temp }}'"
+  when: ansible_facts.services["chronyd.service"].state == "inactive"
+
+- name: Adjust Default clock settings
+  command: "timedatectl set-timezone Europe/Istanbul"
+  when: ansible_facts.services["chronyd.service"].state == "inactive"
+
+- name: Delete default pool config
+  lineinfile:
+     path: /etc/chrony.conf
+     regexp: "^pool*." 
+     state: absent
+
+- name: Set NTP server via chrony
+  lineinfile:
+     dest: /etc/chrony.conf
+     line: "server {{ item }} iburst"
+  with_items: "{{ ntp_servers }}"
+
+- name: Optimize For Microsoft Windows NP Servers
+  lineinfile:
+     dest: /etc/chrony.conf
+     line: maxdistance 16.0
+
+- name: Start Chronyd
+  command: "{{item}}"
+  with_items:
+  - systemctl restart chronyd
+  - systemctl enable chronyd
+
+- name: "Get status of chronyd"
+  command: bash -lc "systemctl status chronyd"
+  register: command_result
+  ignore_errors: True
+
+- name: Debug Time Syncronization State
+  debug:
+    var: command_result.stdout_lines, command_result.stderr_lines

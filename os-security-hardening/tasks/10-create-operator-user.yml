@@ -1,0 +1,10 @@
+---
+
+- name: Create Operator User
+  user:
+    name: oper
+    comment: Operator User
+    groups: wheel
+    password: xxxxxxxxx
+    state: present
+
