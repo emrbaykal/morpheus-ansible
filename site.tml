@@ -4,5 +4,17 @@
   gather_facts: true
 
   roles:
-         - os-preconfigure
-         - os-security-hardening 
+         - role: 01-selinux
+           tags: 
+             - role::os-preconfigure
+             - role::os-preconfigure::selinux
+
+         - role: 02-firewall
+           tags:
+             - role::os-preconfigure
+             - role::os-preconfigure::firewall
+
+         - role: 03-configure-issue
+           tags:
+             - role::os-preconfigure
+             - role::os-preconfigure::configure-issue
