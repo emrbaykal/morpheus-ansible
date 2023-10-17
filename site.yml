@@ -32,4 +32,10 @@
          - role: 06-required-packages
            tags:
              - role::os-preconfigure
-             - role::os-preconfigure::06-required-packages
+             - role::os-preconfigure::required-packages
+
+         - role: 07-network-time-and-date
+           tags:
+             - role::os-preconfigure
+             - role::os-preconfigure::network-time-and-date
+

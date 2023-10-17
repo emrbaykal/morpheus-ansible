@@ -33,3 +33,8 @@ required_packages:
 - kbd-legacy
 - ndctl
 - audispd-plugins
+
+
+ntp_servers:
+- 10.254.254.10
+- 10.254.254.11
