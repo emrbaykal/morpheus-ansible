@@ -1,2 +1,7 @@
 ---
 # tasks file for required-packages
+
+ - name: Install Required Packages
+   yum:
+     name: "{{ required_packages }}"
+     state: present
