@@ -18,3 +18,8 @@
            tags:
              - role::os-preconfigure
              - role::os-preconfigure::configure-issue
+
+         - role: 04-register-access-redhat
+           tags:
+             - role::os-preconfigure
+             - role::os-preconfigure::register-access-redhat
