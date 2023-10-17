@@ -23,3 +23,9 @@
            tags:
              - role::os-preconfigure
              - role::os-preconfigure::register-access-redhat
+
+         - role: 05-os-update
+           tags:
+             - role::os-preconfigure
+             - role::os-preconfigure::os-update
+
