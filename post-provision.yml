@@ -34,7 +34,7 @@
              - role::os-preconfigure
              - role::os-preconfigure::required-packages
 
-         - role: 07-network-time-and-date2
+         - role: 07-network-time-and-date
            tags:
              - role::os-preconfigure
              - role::os-preconfigure::network-time-and-date
