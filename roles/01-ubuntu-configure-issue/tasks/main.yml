@@ -1,21 +1,19 @@
 ---
-# tasks file for selinux
-  - name: Disable Selinux
-    selinux:
-      state: disabled
-    register: selinux_state
+- name: Configure /etc/issue.net file
+  copy:
+    dest: /etc/issue.net
+    content: |
+      Welcome to {{ ansible_hostname }}
+      Authorized access only!
+      All activities may be monitored and reported.
 
-  - name: Rebooting ...
-    shell: sleep 2 && /sbin/shutdown -r now "Reboot required for updated kernel"
-    async: 1
-    poll: 0
-    ignore_errors: true
-    when: selinux_state.reboot_required == True
-    register: rebooting
+- name: Set Banner in sshd_config
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Banner'
+    line: 'Banner /etc/issue.net'
+    state: present
+  notify: restart_ssh_client
 
-  - name: Wait for system to become reachable
-    wait_for_connection:
-      timeout: 900
-      sleep: 15
-      delay: 30
-    when: rebooting.changed
+- name: Force all notified SSH services
+  meta: flush_handlers
