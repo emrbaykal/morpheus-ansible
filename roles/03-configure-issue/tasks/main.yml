@@ -6,6 +6,7 @@
       path=/etc/ssh/sshd_config
       regexp='^#Banner none'
       replace='Banner /etc/issue.net'
+  notify: restart_ssh_client
 
 
 - name: Deploy isse.net file to the clients
