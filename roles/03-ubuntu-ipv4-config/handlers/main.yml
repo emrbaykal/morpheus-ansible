@@ -1,1 +1,7 @@
 ---
+
+- name: apply-sysctl-parameters
+  command: sysctl --system
+
+- name: load-br_netfilter-module
+  command: modprobe br_netfilter
