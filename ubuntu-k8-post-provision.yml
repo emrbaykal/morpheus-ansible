@@ -7,3 +7,8 @@
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::configure-issue
+
+       - role: 02-ubuntu-swap-file
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::swap-file
