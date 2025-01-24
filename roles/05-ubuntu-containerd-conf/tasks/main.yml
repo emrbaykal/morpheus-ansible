@@ -39,6 +39,8 @@
     state: present
 
 - name: Generate default containerd configuration
+  become: yes
+  become_user: root
   command: containerd config default > /etc/containerd/config.toml
 
 - name: Update containerd configuration
