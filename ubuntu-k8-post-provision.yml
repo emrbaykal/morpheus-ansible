@@ -27,3 +27,8 @@
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::containerd-conf
+
+       - role: 06-ubuntu-kubernetes-conf
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::kubernetes-conf
