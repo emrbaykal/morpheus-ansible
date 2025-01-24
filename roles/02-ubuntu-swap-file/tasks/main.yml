@@ -1,13 +1,20 @@
-- name: Disable swap
-  command: swapoff /swapfile
-
-- name: Remove swapfile entry from /etc/fstab
-  lineinfile:
-    path: /etc/fstab
-    state: absent
-    regexp: '^/swapfile'
-
-- name: Remove the swapfile
-  file:
+- name: Check if swapfile exists
+  stat:
     path: /swapfile
-    state: absent
+  register: swapfile
+
+- block:
+    - name: Disable swap
+      command: swapoff /swapfile
+
+    - name: Remove swapfile entry from /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        state: absent
+        regexp: '^/swapfile'
+
+    - name: Remove the swapfile
+      file:
+        path: /swapfile
+        state: absent
+  when: swapfile.stat.exists
