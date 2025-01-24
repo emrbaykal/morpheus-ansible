@@ -1,1 +1,11 @@
 ---
+
+- name: update-apt-package
+  apt:
+    update_cache: yes
+
+- name: ntainerd-service
+  service:
+    name: containerd
+    state: restarted
+    enabled: yes

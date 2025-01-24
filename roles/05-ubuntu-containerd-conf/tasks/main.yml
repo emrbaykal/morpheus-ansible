@@ -31,14 +31,24 @@
     filename: docker
     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
-
-- name: Update apt package index again
-  apt:
-    update_cache: yes
+  notify: update-apt-package
 
 - name: Install containerd.io
   apt:
     name: containerd.io
     state: present
+
+- name: Generate default containerd configuration
+  command: containerd config default > /etc/containerd/config.toml
+
+- name: Update containerd configuration
+  lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  with_items:
+    - { regexp: '^(\s*)SystemdCgroup\s*=\s*.*', line: '\1SystemdCgroup = true' }
+    - { regexp: '^(\s*)sandbox_image\s*=\s*.*', line: '\1sandbox_image = "registry.k8s.io/pause:3.10"' }
+  notify: containerd-service
 
 
