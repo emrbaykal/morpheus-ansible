@@ -22,3 +22,8 @@
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::os-upgrade
+
+       - role: 05-ubuntu-containerd-conf
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::containerd-conf
