@@ -30,3 +30,12 @@
     repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /"
     state: present
   notify: update-apt-package
+
+- name: Install Kubernetes Packages
+  apt:
+    name: containerd.io
+    state: present
+  with_items:
+    - kubelet 
+    - kubeadm
+    - kubectl
