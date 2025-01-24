@@ -18,7 +18,7 @@
            - role::os-preconfigure
            - role::os-preconfigure::ipv4-config
 
-       - role: 04-ubuntu-os-upgrade
+       - role: 04-ubuntu-os-update
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::os-upgrade
