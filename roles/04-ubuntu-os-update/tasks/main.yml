@@ -1,0 +1,26 @@
+# Enable IPv4 packet forwarding
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Check if a reboot is needed
+  register: reboot_required_file
+  stat:
+    path: /var/run/reboot-required
+
+- block:
+    - name: Reboot the server
+      reboot:
+        msg: "Reboot initiated by Ansible for system upgrade"
+        pre_reboot_delay: 10
+
+    - name: Wait for system to become reachable
+      wait_for_connection:
+        timeout: 900
+        sleep: 15
+        delay: 30
+  when: reboot_required_file.stat.exists
+
