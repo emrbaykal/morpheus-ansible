@@ -4,7 +4,7 @@
   apt:
     update_cache: yes
 
-- name: ntainerd-service
+- name: containerd-service
   service:
     name: containerd
     state: restarted
