@@ -33,9 +33,9 @@
 
 - name: Install Kubernetes Packages
   apt:
-    name: containerd.io
+    name: "{{ item }}"
     state: present
   with_items:
-    - kubelet 
+    - kubelet
     - kubeadm
     - kubectl
