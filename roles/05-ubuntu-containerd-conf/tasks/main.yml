@@ -36,4 +36,9 @@
   apt:
     update_cache: yes
 
+- name: Install containerd.io
+  apt:
+    name: containerd.io
+    state: present
+
 
