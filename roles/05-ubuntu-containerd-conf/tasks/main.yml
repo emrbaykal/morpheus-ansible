@@ -47,14 +47,3 @@
     mode: '0644'
   notify: containerd-service
 
-- name: Update containerd configuration
-  lineinfile:
-    path: /etc/containerd/config.toml
-    regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
-  with_items:
-    - { regexp: '^(\s*)SystemdCgroup\s*=\s*.*', line: '\1SystemdCgroup = true' }
-    - { regexp: '^(\s*)sandbox_image\s*=\s*.*', line: '\1sandbox_image = "registry.k8s.io/pause:3.10"' }
-  notify: containerd-service
-
-
