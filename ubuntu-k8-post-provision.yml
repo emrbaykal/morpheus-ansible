@@ -12,3 +12,8 @@
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::swap-file
+
+       - role: 03-ubuntu-ipv4-config
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::ipv4-config
