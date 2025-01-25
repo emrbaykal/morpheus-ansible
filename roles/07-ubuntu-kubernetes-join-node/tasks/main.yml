@@ -8,7 +8,7 @@
 
 - name: set join command
   set_fact:
-  join_command: "{{ join_command_raw.stdout_lines[0] }}"
+    join_command: "{{ join_command_raw.stdout_lines[0] }}"
 
 - name: join cluster
   shell: "{{ join_command }} --ignore-preflight-errors all  >> node_joined.txt"
