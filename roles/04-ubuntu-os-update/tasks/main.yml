@@ -1,6 +1,6 @@
 # Enable IPv4 packet forwarding
 
-- name: Upgrade all packages
+- name: Apply Operating System Upgrade Patches
   apt:
     upgrade: dist
     update_cache: yes
