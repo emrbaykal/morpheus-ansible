@@ -32,3 +32,8 @@
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::kubernetes-conf
+
+       - role: 07-ubuntu-kubernetes-join-node
+         tags:
+           - role::k8-worker-node
+           - role::k8-worker-node::kubernetes-join-node
