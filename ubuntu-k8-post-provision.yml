@@ -28,12 +28,12 @@
            - role::os-preconfigure
            - role::os-preconfigure::containerd-conf
 
-      # - role: 06-ubuntu-kubernetes-conf
-      #   tags:
-      #     - role::os-preconfigure
-      #     - role::os-preconfigure::kubernetes-conf
+       - role: 06-ubuntu-kubernetes-conf
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::kubernetes-conf
 
-      # - role: 07-ubuntu-kubernetes-join-node
-      #   tags:
-      #     - role::k8-worker-node
-      #     - role::k8-worker-node::kubernetes-join-node
+       - role: 07-ubuntu-kubernetes-join-node
+         tags:
+           - role::k8-worker-node
+           - role::k8-worker-node::kubernetes-join-node
