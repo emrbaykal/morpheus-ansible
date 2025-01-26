@@ -20,14 +20,14 @@
 
 - name: Download Kubernetes GPG key
   apt_key:
-    url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+    url: "https://pkgs.k8s.io/core:/stable:/v{{ morpheus['customOptions']['kubernetes_vers'] }}/deb/Release.key"
     state: present
     keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 - name: Add Kubernetes repository to apt sources
   apt_repository:
     filename: kubernetes
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /"
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ morpheus['customOptions']['kubernetes_vers'] }}/deb/ /"
     state: present
   notify: update-apt-package
 
