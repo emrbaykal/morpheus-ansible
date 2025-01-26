@@ -1,19 +1,19 @@
 ---
 
-- name: initialize K8S cluster
-  shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5 
+#- name: initialize K8S cluster
+#  shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5 
 
-- name: create .kube directory
-  file:
-    path: $HOME/.kube
-    state: directory
-    mode: 0755
+#- name: create .kube directory
+#  file:
+#    path: $HOME/.kube
+#    state: directory
+#    mode: 0755
 
-#- name: copy admin.conf to user's kube config
-#  copy:
-#    src: /etc/kubernetes/admin.conf
-#    dest: "$HOME/.kube/config"
-#    owner: "{{ lookup('pipe','id -u') | int }}"
-#    group: "{{ lookup('pipe','id -g') | int }}"
-#    remote_src: no
+- name: copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "$HOME/.kube/config"
+    owner: "{{ lookup('pipe','id -u') | int }}"
+    group: "{{ lookup('pipe','id -g') | int }}"
+    remote_src: no
 
