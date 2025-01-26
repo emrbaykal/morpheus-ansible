@@ -33,6 +33,11 @@
            - role::os-preconfigure
            - role::os-preconfigure::kubernetes-conf
 
+       - role: 07-ubuntu-kubernetes-,initilize-cluster
+         tags:
+           - role::k8-master-node
+           - role::k8-master-node::initilize-cluster
+
        #- role: 07-ubuntu-kubernetes-join-node
        #  tags:
        #    - role::k8-worker-node
