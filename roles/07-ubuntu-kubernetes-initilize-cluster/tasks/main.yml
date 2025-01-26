@@ -11,6 +11,7 @@
 
 - name: copy admin.conf to user's kube config
   copy:
+    remote_src: yes
     src: /etc/kubernetes/admin.conf
     dest: "{{ ansible_env.HOME }}/.kube/config"
     owner: "{{ lookup('pipe','id -u') | int }}"
