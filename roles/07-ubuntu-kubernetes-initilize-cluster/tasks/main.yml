@@ -15,5 +15,4 @@
     dest: "$HOME/.kube/config"
     owner: "{{ lookup('pipe','id -u') | int }}"
     group: "{{ lookup('pipe','id -g') | int }}"
-    remote_src: no
 
