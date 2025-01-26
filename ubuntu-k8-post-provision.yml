@@ -13,20 +13,20 @@
            - role::os-preconfigure
            - role::os-preconfigure::swap-file
 
-      # - role: 03-ubuntu-ipv4-config
-      #   tags:
-      #     - role::os-preconfigure
-      #     - role::os-preconfigure::ipv4-config
+       - role: 03-ubuntu-ipv4-config
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::ipv4-config
 
-      # - role: 04-ubuntu-os-update
-      #   tags:
-      #     - role::os-preconfigure
-      #     - role::os-preconfigure::os-upgrade
+       - role: 04-ubuntu-os-update
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::os-upgrade
 
-      # - role: 05-ubuntu-containerd-conf
-      #   tags:
-      #     - role::os-preconfigure
-      #     - role::os-preconfigure::containerd-conf
+       - role: 05-ubuntu-containerd-conf
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::containerd-conf
 
       # - role: 06-ubuntu-kubernetes-conf
       #   tags:
