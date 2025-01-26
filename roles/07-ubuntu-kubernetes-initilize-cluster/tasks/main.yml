@@ -1,7 +1,7 @@
 ---
 
 - name: initialize K8S cluster
-  shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['kubernetes_vers'] }} --v=5 
+  shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5 
 
 - name: create .kube directory
   file:
