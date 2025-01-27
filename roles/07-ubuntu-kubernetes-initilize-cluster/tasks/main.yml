@@ -68,5 +68,5 @@
       kubernetes.core.k8s:
         state: present
         src: "{{ ansible_env.HOME }}/kube-flannel.yml" 
-  when: flannelCheck.rc != 0
+  when: flannelCheck.resources | length == 0
 
