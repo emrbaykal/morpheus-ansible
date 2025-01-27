@@ -11,6 +11,7 @@
   ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip3
+    break_system_packages: true
   with_items:
     - PyYAML
     - jmespath
