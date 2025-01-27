@@ -15,6 +15,7 @@
   with_items:
     - PyYAML
     - jmespath
+    - kubernetes
 
 - name: Check if admin.conf is present
   stat:
