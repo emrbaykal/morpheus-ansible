@@ -58,15 +58,15 @@
         dest: "{{ ansible_env.HOME }}/kube-flannel.yml"
         mode: '0644'
 
-   # - name: Update Network CIDR in Flannel manifest
-   #   replace:
-   #     path: "{{ ansible_env.HOME }}/kube-flannel.yml"
-   #     regexp: '"Network": "[^"]*"'
-   #     replace: "\"Network\": \"{{ morpheus['customOptions']['pod_cidr'] }}\""
+    - name: Update Network CIDR in Flannel manifest
+      replace:
+        path: "{{ ansible_env.HOME }}/kube-flannel.yml"
+        regexp: '"Network": "[^"]*"'
+        replace: "\"Network\": \"{{ morpheus['customOptions']['pod_cidr'] }}\""
 
-   # - name: Apply Flannel manifest
-   #   kubernetes.core.k8s:
-   #     state: present
-   #     src: "{{ ansible_env.HOME }}/kube-flannel.yml" 
+    - name: Apply Flannel manifest
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ ansible_env.HOME }}/kube-flannel.yml" 
   when: flannelCheck.resources | length == 0
 
