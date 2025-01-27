@@ -1,4 +1,7 @@
 ---
+- name: Wait for 2 minutes before proceeding kubernetes cluster
+  pause:
+    minutes: 2
 
 - name: Install Required Kubernetes Management Packages
   apt:
@@ -26,7 +29,6 @@
   block:
     - name: initialize K8S cluster
       shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5
-
     - name: create .kube directory
       file:
         path: "$HOME/.kube"
