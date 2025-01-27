@@ -45,13 +45,11 @@
         group: "{{ lookup('pipe','id -g') | int }}"
   when: not adminconf_check.stat.exists
 
-- name: Check if Flannel is already installed
+- name: Get node status
   kubernetes.core.k8s_info:
-    kind: DaemonSet
-    name: kube-proxy
-    namespace: kube-system
-  register: flannelCheck
-  failed_when: false
+    kind: Node
+    name: "{{ ansible_hostname }}"
+  register: nodestate
 
 - name: Initilize Flannel
   block:
@@ -71,5 +69,6 @@
       kubernetes.core.k8s:
         state: present
         src: "{{ ansible_env.HOME }}/kube-flannel.yml" 
-  when: flannelCheck.resources | length == 0
+  when: 
+    - nodestate.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | map(attribute='status') | first == "False"
 
