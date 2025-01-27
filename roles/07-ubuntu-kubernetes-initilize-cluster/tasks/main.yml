@@ -1,19 +1,44 @@
 ---
 
-#- name: initialize K8S cluster
-#  shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5 
+- name: Check if admin.conf is present
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: adminconf_check
 
-#- name: create .kube directory
-#  file:
-#    path: $HOME/.kube
-#    state: directory
-#    mode: 0755
+- name: Initialize cluster block
+  block:
+    - name: initialize K8S cluster
+      shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5
 
-- name: copy admin.conf to user's kube config
-  copy:
-    remote_src: yes
-    src: /etc/kubernetes/admin.conf
-    dest: "{{ ansible_env.HOME }}/.kube/config"
-    owner: "{{ lookup('pipe','id -u') | int }}"
-    group: "{{ lookup('pipe','id -g') | int }}"
+    - name: create .kube directory
+      file:
+        path: "$HOME/.kube"
+        state: directory
+        mode: 0755
+
+    - name: copy admin.conf to user's kube config
+      copy:
+        remote_src: yes
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ ansible_env.HOME }}/.kube/config"
+        owner: "{{ lookup('pipe','id -u') | int }}"
+        group: "{{ lookup('pipe','id -g') | int }}"
+  when: not adminconf_check.stat.exists
+
+- name: Download Flannel manifest
+  get_url:
+    url: https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+    dest: "{{ ansible_env.HOME }}/kube-flannel.yml"
+    mode: '0644'
+
+- name: Update Network CIDR in Flannel manifest
+  replace:
+    path: "{{ ansible_env.HOME }}/kube-flannel.yml"
+    regexp: '"Network": "[^"]*"'
+    replace: '"Network": "{{ morpheus['customOptions']['pod_cidr'] }}"'
+
+- name: Apply Flannel manifest
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ ansible_env.HOME }}/kube-flannel.yml"
 
