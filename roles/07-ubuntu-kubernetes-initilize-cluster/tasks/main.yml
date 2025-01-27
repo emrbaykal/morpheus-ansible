@@ -1,5 +1,20 @@
 ---
 
+- name: Install Required Kubernetes Management Packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python3-pip
+
+- name: Install python packages
+  ansible.builtin.pip:
+    name: "{{ item }}"
+    executable: pip3
+  with_items:
+    - PyYAML
+    - jmespath
+
 - name: Check if admin.conf is present
   stat:
     path: /etc/kubernetes/admin.conf
