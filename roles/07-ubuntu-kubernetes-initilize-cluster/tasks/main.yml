@@ -48,7 +48,7 @@
 - name: Wait for 3 minutes before proceeding configure Flannel
   pause:
     prompt: "Wait for 3 minutes before proceeding configure Flannel !!"
-    minutes: 2
+    minutes: 3
 
 - name: Get node status
   kubernetes.core.k8s_info:
