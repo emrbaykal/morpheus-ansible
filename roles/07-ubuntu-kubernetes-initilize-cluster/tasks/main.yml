@@ -1,6 +1,7 @@
 ---
 - name: Wait for 2 minutes before proceeding kubernetes cluster
   pause:
+    prompt: "Wait for 2 minutes before proceeding kubernetes cluster !!"
     minutes: 2
 
 - name: Install Required Kubernetes Management Packages
