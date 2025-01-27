@@ -46,7 +46,7 @@
   kubernetes.core.k8s_info:
     kind: DaemonSet
     name: kube-proxy
-    namespace: kube-system2
+    namespace: kube-system
   register: flannelCheck
   failed_when: false
 
