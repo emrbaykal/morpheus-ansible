@@ -45,9 +45,9 @@
         group: "{{ lookup('pipe','id -g') | int }}"
   when: not adminconf_check.stat.exists
 
-- name: Wait for 2 minutes before proceeding configure Flannel
+- name: Wait for 3 minutes before proceeding configure Flannel
   pause:
-    prompt: "Wait for 2 minutes before proceeding configure Flannel !!"
+    prompt: "Wait for 3 minutes before proceeding configure Flannel !!"
     minutes: 2
 
 - name: Get node status
