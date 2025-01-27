@@ -35,7 +35,7 @@
   replace:
     path: "{{ ansible_env.HOME }}/kube-flannel.yml"
     regexp: '"Network": "[^"]*"'
-    replace: '"Network": "{{ morpheus['customOptions']['pod_cidr'] }}"'
+    replace: "\"Network\": \"{{ morpheus['customOptions']['pod_cidr'] }}\""
 
 #- name: Apply Flannel manifest
 #  kubernetes.core.k8s:
