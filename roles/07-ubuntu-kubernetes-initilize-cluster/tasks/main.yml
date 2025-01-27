@@ -37,8 +37,8 @@
     regexp: '"Network": "[^"]*"'
     replace: '"Network": "{{ morpheus['customOptions']['pod_cidr'] }}"'
 
-- name: Apply Flannel manifest
-  kubernetes.core.k8s:
-    state: present
-    src: "{{ ansible_env.HOME }}/kube-flannel.yml"
+#- name: Apply Flannel manifest
+#  kubernetes.core.k8s:
+#    state: present
+#    src: "{{ ansible_env.HOME }}/kube-flannel.yml"
 
