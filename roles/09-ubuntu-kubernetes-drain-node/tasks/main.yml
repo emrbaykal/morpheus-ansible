@@ -42,7 +42,7 @@
         file:
           path: "~/.kube"
           state: absent
-  when: not kubelet_conf.stat.exists
+  when: kubelet_conf.stat.exists
 
 
 
