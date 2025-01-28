@@ -10,6 +10,7 @@
     - name: get join command to the master server
       shell: kubeadm token create --print-join-command
       delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+      become: true
       register: join_command_raw
 
     - name: join kubernetes cluster
