@@ -16,7 +16,6 @@
 
     - name: join kubernetes cluster
       shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
-      #shell: "kubeadm join {{ morpheus['customOptions']['k8_master_ip'] }}:6443 --token {{ lookup('cypher','secret=secret/K8-join-token') }} --discovery-token-ca-cert-hash {{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
       register: join_result
 
     - name: Kubernetes Cluster Node Join Result
@@ -26,25 +25,22 @@
     - name: Wait for node to be ready
       pause:
         seconds: 60
+
+    - name: Label node as worker
+      kubernetes.core.k8s:
+          api_version: v1
+          kind: Node
+          name: "{{ ansible_hostname }}"
+          definition:
+            metadata:
+              labels:
+                node-role.kubernetes.io/worker: "worker"
+      delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+      vars:
+          ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
   when: not kubelet_conf.stat.exists
 
-- name: Label node as worker
-  kubernetes.core.k8s:
-      api_version: v1
-      kind: Node
-      name: "{{ ansible_hostname }}"
-      definition:
-        metadata:
-          labels:
-            node-role.kubernetes.io/worker: "worker"
-  delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
-  vars:
-        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-  register: label_result
+
+
   
-
-
-- name: Show label result
-  debug:
-      var: label_result
 
