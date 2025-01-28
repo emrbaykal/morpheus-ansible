@@ -34,7 +34,7 @@
   register: label_result
   delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
   vars:
-    ansible_user: morpheus-node
+    ansible_user: emre.baykal
 
 - name: Show label result
   debug:
