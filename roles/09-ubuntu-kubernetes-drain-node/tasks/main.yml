@@ -10,9 +10,10 @@
         kubernetes.core.k8s_drain:
           name: "{{ ansible_hostname }}"
           state: drain
-          delete_local_data: true
-          force: true
-          ignore_daemonsets: true
+          delete_options:
+            delete_emptydir_data: true
+            force: true
+            ignore_daemonsets: true
         vars:
             ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
         delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
