@@ -1,58 +1,123 @@
 # Morpheus Ansible Kubernetes Deployment
 
 ## Overview
-This repository contains Ansible roles for automated deployment of a Kubernetes cluster on Ubuntu systems using Morpheus. The playbooks handle both master and worker node configurations with containerd as the container runtime.
+Automated Kubernetes cluster deployment solution using Ansible and Morpheus integration. This project provides a complete workflow for setting up both master and worker nodes in a Kubernetes cluster with containerd runtime on Ubuntu systems.
 
 ## Prerequisites
-- Ubuntu Server
-- Ansible
-- Morpheus integration
-- Python 3.x
+- Ubuntu Server (tested on latest LTS)
+- Ansible 2.9+
+- Morpheus Infrastructure
+- Python 3.x with pip
+- Required Python packages:
+  - PyYAML
+  - jmespath
+  - kubernetes
 
-## Role Structure
-The repository consists of the following main roles:
+## Role Structure & Workflow
 
-1. **ubuntu-containerd-conf**
-   - Configures containerd runtime
-   - Sets up Docker repository
-   - Installs and configures containerd.io
+### 1. Basic Ubuntu Configuration (01-ubuntu-config-issue)
+- Handles initial Ubuntu system setup
+- Tasks:
+    - Configures welcome messages
 
-2. **ubuntu-kubernetes-conf**
-   - Installs Kubernetes packages (kubelet, kubeadm, kubectl)
-   - Configures Kubernetes repositories
-   - Manages GPG keys and apt sources
+### 2. Swap Management (02-ubuntu-swap-file)
+- Manages system swap configuration
+- Tasks:
+    - Disables swap functionality
+    - Removes swap entries from fstab
+    - Ensures system stability for Kubernetes
 
-3. **ubuntu-kubernetes-initilize-cluster**
-   - Initializes Kubernetes master node
-   - Sets up cluster networking with Flannel
-   - Configures kubeconfig
+### 3. IPv4 Configuration (03-ubuntu-ipv4-config)
+- Configures network settings
+- Tasks:
+    - Enables IPv4 forwarding
+    - Updates sysctl parameters
+    - Applies network configuration changes
 
-4. **ubuntu-kubernetes-join-node**
-   - Handles worker node joining process
-   - Labels nodes appropriately
-   - Validates cluster joining status
+### 4. System Upgrade (04-ubuntu-os-upgrade)
+- Manages system updates
+- Tasks:
+    - Updates package repositories
+    - Performs system upgrade
+    - Handles package management cleanup
 
-## Custom Options
-The deployment uses Morpheus custom options:
-- `kubernetes_vers`: Kubernetes version
-- `pod_cidr`: Pod network CIDR
-- `k8_master_ip`: Kubernetes master node IP
 
-## Features
-- Automated containerd setup
-- Kubernetes cluster initialization
-- Flannel network configuration
-- Worker node joining automation
-- Node labeling
-- Proper wait times between critical operations
+### 5. Containerd Configuration (05-ubuntu-containerd-conf)
+- Sets up container runtime environment
+- Tasks:
+  - Installs required certificates and dependencies
+  - Configures Docker repository and GPG keys
+  - Installs and configures containerd.io
+  - Manages containerd configuration via config.toml
 
-## Usage
+### 6. Kubernetes Base Setup (06-ubuntu-kubernetes-conf)
+- Prepares the system for Kubernetes installation
+- Tasks:
+  - Configures apt repositories for Kubernetes
+  - Installs core Kubernetes packages (kubelet, kubeadm, kubectl)
+  - Manages Kubernetes GPG keys and sources
+
+### 7. Master Node Setup (07-ubuntu-kubernetes-initilize-cluster)
+- Initializes the Kubernetes control plane
+- Tasks:
+  - Waits for prerequisite services (2 minutes)
+  - Installs Python dependencies for Kubernetes modules
+  - Initializes Kubernetes cluster with kubeadm
+  - Configures kubectl access
+  - Sets up Flannel networking
+  - Includes safety delays and status checks
+
+### 8. Worker Node Join (08-ubuntu-kubernetes-join-node)
+- Manages worker node addition to the cluster
+- Tasks:
+  - Checks for existing cluster membership
+  - Retrieves join command from master
+  - Executes cluster join operation
+  - Labels node as worker
+  - Includes verification steps
+
+### 9. Node Teardown (09-ubuntu-kubernetes-node-teardown)
+- Handles clean removal of nodes from cluster
+- Tasks:
+  - Drains node workloads
+  - Removes node from cluster
+  - Uninstalls Kubernetes components
+  - Cleans up configurations
+
+## Morpheus Integration
+### Custom Options
+- `kubernetes_vers`: Kubernetes version specification
+- `pod_cidr`: Network CIDR for pod networking
+- `k8_master_ip`: Master node IP address
+- `hpe-user`: Credentials for node operations
+
+### Security Features
+- Uses Morpheus Cypher for sensitive data
+- Implements proper permission management
+- Secure key handling for repositories
+
+## Usage Instructions
 1. Configure Morpheus custom options
-2. Execute roles in sequence:
-   - containerd configuration
-   - kubernetes package installation
-   - master node initialization
-   - worker node joining
+2. Ensure network connectivity between nodes
 
-## Note
-This setup is designed to work with Morpheus automation platform and includes necessary wait times and checks for proper cluster formation.
+## Network Configuration
+- Flannel CNI plugin for pod networking
+- Configurable pod CIDR through Morpheus options
+- Automatic network setup with proper delays for stabilization
+
+## Maintenance
+- Use 09-ubuntu-kubernetes-node-teardown for clean node removal
+- Monitor /var/log/syslog for troubleshooting
+- Check node status using kubectl get nodes
+
+## Best Practices
+- Allow sufficient time between deployment steps
+- Verify network connectivity before deployment
+- Ensure all prerequisites are met
+- Monitor logs during deployment
+
+## Notes
+- Designed for Morpheus automation platform
+- Includes necessary wait times for service stability
+- Implements idempotent operations where possible
+- Uses delegate_to for master node operations
