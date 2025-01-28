@@ -19,7 +19,7 @@
         delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
 
       - name: Reset kubeadm
-        command: kubeadm reset
+        command: kubeadm reset --force
         
       - name: Delete node from cluster
         kubernetes.core.k8s:
