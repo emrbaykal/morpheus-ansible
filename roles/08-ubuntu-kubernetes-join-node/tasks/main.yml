@@ -1,21 +1,14 @@
 ---
 
-#- name: join kubernetes cluster
-#  shell: "kubeadm join {{ morpheus['customOptions']['master_node_ip'] }}:6443 --token {{ lookup('cypher','secret=secret/K8-join-token') }} --discovery-token-ca-cert-hash {{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
-#  register: join_result
+- name: join kubernetes cluster
+  shell: "kubeadm join {{ morpheus['customOptions']['k8_master_ip'] }}:6443 --token {{ lookup('cypher','secret=secret/K8-join-token') }} --discovery-token-ca-cert-hash {{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
+  register: join_result
 
-#- name: Kubernetes Cluster Node Join Result
-#  debug:
-#    var: join_result.stdout_lines
+- name: Kubernetes Cluster Node Join Result
+  debug:
+    var: join_result.stdout_lines
 
   
- - debug:
-    msg: "{{ morpheus['customOptions']['k8_master_ip'] }}"
 
- - debug:
-    msg: "{{ lookup('cypher','secret=secret/K8-join-token') }}"
-
- - debug:
-    msg: "{{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
 
   
