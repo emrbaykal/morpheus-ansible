@@ -7,14 +7,11 @@
     ansible_user: hpe
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   roles:
-       - role: 01-ubuntu-config-issue
+       - role: 09-ubuntu-kubernetes-node-teardown
          tags:
-           - role::os-preconfigure
-           - role::os-preconfigure::configure-issue
+           - role::k8-teardown-worker-node
+           - role::k8-teardown-worker-node::teardown-worker-node
 
-       - role: 02-ubuntu-swap-file
-         tags:
-           - role::os-preconfigure
-           - role::os-preconfigure::swap-file
+
 
        
