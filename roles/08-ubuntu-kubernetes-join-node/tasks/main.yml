@@ -32,8 +32,7 @@
           labels:
             node-role.kubernetes.io/worker: "worker"
   register: label_result
-  delegate_to: k8master
-  #delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+  delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
 
 
 - name: Show label result

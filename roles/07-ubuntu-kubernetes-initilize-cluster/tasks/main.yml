@@ -26,7 +26,7 @@
     path: /etc/kubernetes/admin.conf
   register: adminconf_check
 
-- name: Initialize cluster block
+- name: Initialize cluster
   block:
     - name: initialize K8S cluster
       shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5
