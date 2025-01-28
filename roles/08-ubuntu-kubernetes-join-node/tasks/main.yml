@@ -10,7 +10,8 @@
     - name: get join command to the master server
       shell: kubeadm token create --print-join-command
       delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
-      become: true
+      vars:
+        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
       register: join_command_raw
 
     - name: join kubernetes cluster
@@ -36,8 +37,11 @@
         metadata:
           labels:
             node-role.kubernetes.io/worker: "worker"
-  register: label_result
   delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+  vars:
+        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+  register: label_result
+  
 
 
 - name: Show label result
