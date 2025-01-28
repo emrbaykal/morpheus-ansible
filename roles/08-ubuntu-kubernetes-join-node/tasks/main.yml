@@ -9,8 +9,8 @@
 #    var: join_result.stdout_lines
 
   
- - debug:
-    var: "{{ morpheus['customOptions']['master_node_ip'] }}"
+ #- debug:
+ #   var: "{{ morpheus['customOptions']['master_node_ip'] }}"
 
  - debug:
     var: "{{ lookup('cypher','secret=secret/K8-join-token') }}"
