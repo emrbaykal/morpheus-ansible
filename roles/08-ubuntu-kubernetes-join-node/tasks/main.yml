@@ -7,8 +7,14 @@
 
 - name: Join and label kubernetes node block
   block:
+    - name: get join command to the master server
+      shell: kubeadm token create --print-join-command
+      delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+      register: join_command_raw
+
     - name: join kubernetes cluster
-      shell: "kubeadm join {{ morpheus['customOptions']['k8_master_ip'] }}:6443 --token {{ lookup('cypher','secret=secret/K8-join-token') }} --discovery-token-ca-cert-hash {{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
+      shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+      #shell: "kubeadm join {{ morpheus['customOptions']['k8_master_ip'] }}:6443 --token {{ lookup('cypher','secret=secret/K8-join-token') }} --discovery-token-ca-cert-hash {{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
       register: join_result
 
     - name: Kubernetes Cluster Node Join Result
@@ -17,10 +23,8 @@
 
     - name: Wait for node to be ready
       pause:
-        seconds: 30
-
+        seconds: 60
   when: not kubelet_conf.stat.exists
-
 
 - name: Label node as worker
   kubernetes.core.k8s:

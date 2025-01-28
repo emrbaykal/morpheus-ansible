@@ -1,6 +1,0 @@
----
-# handlers file for configure-issue
-  - name: restart_ssh_client
-    command: "{{item}}"
-    with_items:
-      - systemctl restart sshd
