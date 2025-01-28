@@ -1,15 +1,9 @@
 ---
-- name: get join command
-  shell: kubeadm token create --print-join-command
-  register: join_command_raw
-  delegate_to: "{{ groups['kubernetes-master'][0] }}"
 
-- name: set join command
-  set_fact:
-    join_command: "{{ join_command_raw.stdout_lines[0] }}"
+- name: join kubernetes cluster
+  shell: "kubeadm join {{ morpheus['customOptions']['master_node_ip'] }}:6443 --token {{ lookup('cypher','secret=secret/K8-join-token') }} --discovery-token-ca-cert-hash {{ lookup('cypher','secret=secret/K8-join-token-ca-cert-hash') }}"
+  register: join_result
 
-- name: join cluster
-  shell: "{{ join_command }} --ignore-preflight-errors all  >> node_joined.txt"
-  args:
-    chdir: $HOME
-    creates: node_joined.txt
+- name: Kubernetes Cluster Node Join Result
+  debug:
+    var: join_result.stdout_lines
