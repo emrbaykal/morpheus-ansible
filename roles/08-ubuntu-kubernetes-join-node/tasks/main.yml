@@ -33,6 +33,8 @@
             node-role.kubernetes.io/worker: "worker"
   register: label_result
   delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+  vars:
+    ansible_user: morpheus-node
 
 - name: Show label result
   debug:
