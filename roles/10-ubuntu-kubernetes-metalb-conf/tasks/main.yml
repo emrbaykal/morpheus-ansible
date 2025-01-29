@@ -6,3 +6,12 @@
     name: metallb-system
   register: metallb_ns
   ignore_errors: true
+
+- name: Metalb Initilization block
+  block:
+    - name: Install MetalLB
+      kubernetes.core.k8s:
+      state: present
+      src: https://raw.githubusercontent.com/metallb/metallb/v0.14.9/config/manifests/metallb-native.yaml
+
+  when: metallb_ns.resources | length == 0
