@@ -65,5 +65,5 @@
       debug:
         var: metallb_resources
 
-  when: metallb_ns.resources | length != 0
+  when: metallb_ns.resources | length == 0
   
