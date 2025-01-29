@@ -5,8 +5,8 @@
   roles:
        - role: 09-ubuntu-kubernetes-drain-node
          tags:
-           - role::k8-drain-node
-           - role::k8-drain-node::teardown-worker-node
+           - role::drain-node
+           - role::drain-node::k8-drain-node
 
 
 

@@ -1,0 +1,5 @@
+---
+
+- name: update-apt-package
+  apt:
+    update_cache: yes

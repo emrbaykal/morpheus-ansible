@@ -1,0 +1,53 @@
+---
+- name: Check if node is already part of a cluster
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
+
+- name: Drain kubernetes node block
+  block:
+      - name: Drain node from cluster
+        kubernetes.core.k8s_drain:
+          name: "{{ ansible_hostname }}"
+          state: drain
+          delete_options:
+            delete_emptydir_data: true
+            force: true
+            ignore_daemonsets: true
+        vars:
+            ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+        delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+
+      - name: Reset kubeadm
+        command: kubeadm reset --force
+        
+      - name: Delete node from cluster
+        kubernetes.core.k8s:
+          state: absent
+          kind: Node
+          name: "{{ ansible_hostname }}"
+        vars:
+            ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+        delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+
+      - name: Remove Kubernetes packages
+        apt:
+          name: 
+            - kubelet
+            - kubeadm
+            - kubectl
+          state: absent
+          purge: yes
+
+      - name: Remove .kube directory
+        file:
+          path: "~/.kube"
+          state: absent
+  when: kubelet_conf.stat.exists
+
+
+
+
+
+
+
