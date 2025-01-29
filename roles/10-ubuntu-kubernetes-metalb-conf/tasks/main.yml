@@ -36,7 +36,8 @@
             namespace: metallb-system
           spec:
             addresses:
-            - "{{ morpheus['customOptions']['metalb_ip_range'] }}"
+            #- "{{ morpheus['customOptions']['metalb_ip_range'] }}"
+            - 10.15.100.120-10.15.100.130
 
     - name: Create L2Advertisement configuration
       kubernetes.core.k8s:
