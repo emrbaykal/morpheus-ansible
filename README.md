@@ -28,6 +28,11 @@ Kubernetes cluster deployment automation using Ansible and Morpheus integration.
   - kubernetes
   ```
 
+### Additional Network Requirements
+- Reserved IP range for MetalLB load balancer services
+- No DHCP conflicts in the MetalLB IP range
+- L2 network connectivity for MetalLB
+
 ## Role Structure
 ### Pre-Installation Roles (01-04)
 1. **01-ubuntu-config-issue**
@@ -81,6 +86,13 @@ Kubernetes cluster deployment automation using Ansible and Morpheus integration.
    - Clean uninstallation
    - Configuration cleanup
 
+### Network Services Role (10)
+10. **10-ubuntu-kubernetes-metalb-conf**
+    - MetalLB load balancer deployment
+    - L2 configuration
+    - IP address pool management
+    - Load balancer service enablement
+
 ## Morpheus Integration
 ### Custom Options
 | Option | Description | Example |
@@ -89,6 +101,7 @@ Kubernetes cluster deployment automation using Ansible and Morpheus integration.
 | pod_cidr | Pod network CIDR | 10.244.0.0/16 |
 | k8_master_ip | Control plane IP | 192.168.1.10 |
 | hpe-user | Node access credentials | stored in cypher |
+| metalb_ip_range | MetalLB address pool | 192.168.1.240-192.168.1.250 |
 
 ### Security Features
 - Morpheus Cypher integration
@@ -115,6 +128,12 @@ Kubernetes cluster deployment automation using Ansible and Morpheus integration.
    Purpose: Cluster creation and expansion
    ```
 
+4. **Network Services**
+   ```
+   Roles: 10
+   Purpose: Load balancer configuration
+   ```
+
 ## Maintenance Operations
 ### Node Addition
 1. Execute ubuntu-k8-post-provision.yml
@@ -128,5 +147,14 @@ Kubernetes cluster deployment automation using Ansible and Morpheus integration.
 - Check logs: /var/log/syslog
 - Verify node status: kubectl get nodes
 - Monitor pod health: kubectl get pods --all-namespaces
+
+## Load Balancer Configuration
+### MetalLB Setup
+- Automated deployment via role 10-ubuntu-kubernetes-metalb-conf
+- L2 advertisement configuration
+- IP pool management
+- Service validation
+
+
 
 
