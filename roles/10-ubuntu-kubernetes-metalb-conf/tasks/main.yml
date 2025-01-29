@@ -23,7 +23,7 @@
         wait_condition:
           type: Ready
           status: "True"
-        register: metallb_pods
+      register: metallb_pods
 
     - name: Create IPAddressPool configuration
       kubernetes.core.k8s:
