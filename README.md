@@ -154,7 +154,3 @@ Kubernetes cluster deployment automation using Ansible and Morpheus integration.
 - L2 advertisement configuration
 - IP pool management
 - Service validation
-
-
-
-
