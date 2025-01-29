@@ -24,4 +24,5 @@
         status: "True"
       register: metallb_pods
   when: metallb_ns.resources | length == 0
+  
 
