@@ -1,62 +1,26 @@
 ---
-- name: Install MetalLB
-  kubernetes.core.k8s:
+- name: Check if MetalLB is already installed
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Namespace
+    name: metallb-system
+  register: metallb_ns
+  ignore_errors: true
+
+- block:
+  - name: Install MetalLB
+    kubernetes.core.k8s:
     state: present
     src: https://raw.githubusercontent.com/metallb/metallb/v0.14.9/config/manifests/metallb-native.yaml
 
-- name: Wait for MetalLB pods to be ready
-  kubernetes.core.k8s_info:
+  - name: Wait for MetalLB pods to be ready
+    kubernetes.core.k8s_info:
     kind: Pod
     namespace: metallb-system
     wait: yes
     wait_condition:
       type: Ready
       status: "True"
-  register: metallb_pods
-
-#- name: Create IPAddressPool configuration
-#  kubernetes.core.k8s:
-#    state: present
-#    definition:
-#      apiVersion: metallb.io/v1beta1
-#      kind: IPAddressPool
-#      metadata:
-#        name: default-pool
-#        namespace: metallb-system
-#      spec:
-#        addresses:
-#        - "{{ morpheus['customOptions']['metallb_ip_range'] }}"
-
-#- name: Create L2Advertisement configuration
-#  kubernetes.core.k8s:
-#    state: present
-#    definition:
-#      apiVersion: metallb.io/v1beta1
-#      kind: L2Advertisement
-#      metadata:
-#        name: default
-#        namespace: metallb-system
-#      spec:
-#        ipAddressPools:
-#        - default-pool
-
-#- name: Verify MetalLB deployment
-#  kubernetes.core.k8s_info:
-#    kind: "{{ item }}"
-#    namespace: metallb-system
-#  loop:
-#    - IPAddressPool
-#    - L2Advertisement
-#  register: metallb_resources
-
-
-#- name: Display MetalLB deployment status
-#  debug:
-#    var: metallb_resources
-
-
-
-
-
-
+    register: metallb_pods
+  when: metallb_ns.resources | length == 0
 
