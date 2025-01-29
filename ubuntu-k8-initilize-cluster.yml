@@ -8,6 +8,9 @@
            - role::k8-master-node
            - role::k8-master-node::initilize-cluster
 
-
+       - role: 10-ubuntu-kubernetes-metalb-conf
+         tags:
+           - role::k8-master-node
+           - role::k8-master-node::metalb-conf  
 
   
