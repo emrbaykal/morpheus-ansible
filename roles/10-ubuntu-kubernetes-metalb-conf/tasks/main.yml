@@ -25,18 +25,18 @@
           status: "True"
         register: metallb_pods
 
-    - name: Create IPAddressPool configuration
-      kubernetes.core.k8s:
-        state: present
-        definition:
-          apiVersion: metallb.io/v1beta1
-          kind: IPAddressPool
-          metadata:
-            name: default-pool
-            namespace: metallb-system
-          spec:
-            addresses:
-            - "{{ morpheus['customOptions']['metallb_ip_range'] }}"
+   # - name: Create IPAddressPool configuration
+   #   kubernetes.core.k8s:
+   #     state: present
+   #     definition:
+   #       apiVersion: metallb.io/v1beta1
+   #       kind: IPAddressPool
+   #       metadata:
+   #         name: default-pool
+   #         namespace: metallb-system
+   #       spec:
+   #         addresses:
+   #         - "{{ morpheus['customOptions']['metallb_ip_range'] }}"
 
     - name: Create L2Advertisement configuration
       kubernetes.core.k8s:
@@ -63,4 +63,5 @@
     - name: Display MetalLB deployment status
       debug:
         var: metallb_resources
+
   when: metallb_ns.resources | length == 0
