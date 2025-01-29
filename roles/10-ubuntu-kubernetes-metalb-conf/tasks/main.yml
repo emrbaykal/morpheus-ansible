@@ -65,3 +65,4 @@
         var: metallb_resources
 
   when: metallb_ns.resources | length != 0
+  
