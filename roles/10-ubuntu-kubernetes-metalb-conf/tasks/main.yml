@@ -20,6 +20,7 @@
         kind: Pod
         namespace: metallb-system
         wait: yes
+        wait_timeout: 300
         wait_condition:
           type: Ready
           status: "True"
