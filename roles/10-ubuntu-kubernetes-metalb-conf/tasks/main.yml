@@ -1,28 +1,8 @@
 ---
-    - name: Check if MetalLB is already installed
-      kubernetes.core.k8s_info:
-        api_version: v1
-        kind: Namespace
-        name: metallb-system
-      register: metallb_ns
-      ignore_errors: true
-
-#- name: Metalb Initilization block
- # block:
-    - name: Install MetalLB
-      kubernetes.core.k8s:
-      state: present
-      src: https://raw.githubusercontent.com/metallb/metallb/v0.14.9/config/manifests/metallb-native.yaml
-
-    - name: Wait for MetalLB pods to be ready
-      kubernetes.core.k8s_info:
-      kind: Pod
-      namespace: metallb-system
-      wait: yes
-      wait_condition:
-        type: Ready
-        status: "True"
-      register: metallb_pods
-  #when: metallb_ns.resources | length == 0
-  
-
+- name: Check if MetalLB is already installed
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Namespace
+    name: metallb-system
+  register: metallb_ns
+  ignore_errors: true
