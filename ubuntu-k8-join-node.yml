@@ -5,7 +5,6 @@
   roles:
        - role: 08-ubuntu-kubernetes-join-node
          tags:
-           - role::k8-worker-node
            - role::k8-worker-node::kubernetes-join-node
 
 

@@ -5,12 +5,10 @@
   roles:
        - role: 07-ubuntu-kubernetes-initilize-cluster
          tags:
-           - role::k8-master-node
            - role::k8-master-node::initilize-cluster
 
        - role: 10-ubuntu-kubernetes-metalb-conf
          tags:
-           - role::k8-master-node
            - role::k8-master-node::metalb-conf  
 
   
