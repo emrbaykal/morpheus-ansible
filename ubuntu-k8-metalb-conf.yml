@@ -1,0 +1,10 @@
+---
+- hosts: all
+  gather_facts: true
+  become: true
+  roles:
+       - role: 10-ubuntu-kubernetes-metalb-conf
+         tags:
+           - role::k8-master-node::metalb-conf  
+
+  
