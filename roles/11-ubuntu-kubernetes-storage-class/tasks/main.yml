@@ -32,3 +32,42 @@
     wait_condition:
       type: Ready
       status: "True"
+
+- name: Wait for NFS CSI node pods to be ready
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: kube-system
+    label_selectors:
+      - app=csi-nfs-node
+    wait: yes
+    wait_timeout: 300
+    wait_condition:
+      type: Ready
+      status: "True"
+
+- name: Create NFS Storage Class
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: storage.k8s.io/v1
+      kind: StorageClass
+      metadata:
+        name: nfs-csi
+      provisioner: nfs.csi.k8s.io
+      parameters:
+        server: "{{ morpheus['customOptions']['nfs_server_ip'] }}"
+        share: "{{ morpheus['customOptions']['nfs_share_path'] }}"
+      reclaimPolicy: Delete
+      volumeBindingMode: Immediate
+      mountOptions:
+        - nfsvers=3
+
+- name: Verify Storage Class creation
+  kubernetes.core.k8s_info:
+    kind: StorageClass
+    name: nfs-csi
+  register: sc_status
+
+- name: Display Storage Class status
+  debug:
+    var: sc_status
