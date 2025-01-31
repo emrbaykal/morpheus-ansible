@@ -12,3 +12,23 @@
   delegate_to: "{{ item }}"
   loop: "{{ groups['kubernetes_nodes'] }}"
 
+- name: Download NFS CSI Driver install script
+  get_url:
+    url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/v4.9.0/deploy/install-driver.sh
+    dest: /tmp/install-driver.sh
+    mode: '0755'
+
+- name: Install NFS CSI Driver
+  shell: /tmp/install-driver.sh v4.9.0 --
+
+- name: Wait for NFS CSI controller pods to be ready
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: kube-system
+    label_selectors:
+      - app=csi-nfs-controller
+    wait: yes
+    wait_timeout: 300
+    wait_condition:
+      type: Ready
+      status: "True"
