@@ -1,0 +1,14 @@
+---
+- name: Update apt package index
+  apt:
+    update_cache: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['kubernetes_nodes'] }}"
+
+- name: Install NFS client
+  apt:
+    name: nfs-common
+    state: present
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['kubernetes_nodes'] }}"
+
