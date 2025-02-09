@@ -33,9 +33,9 @@
           kind: Node
           name: "{{ ansible_hostname }}"
           definition:
-        metadata:
-          labels:
-            node-role.kubernetes.io/worker: "worker"
+            metadata:
+              labels:
+                node-role.kubernetes.io/worker: "worker"
       delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
       when: "'Amazon' in morpheus['instance']['layoutName']"
       vars:
