@@ -25,7 +25,7 @@
     
     - name: command
       debug:
-          var: join_command_raw.stdout_lines
+          var: join_command_raw
 
     - name: join kubernetes cluster
       shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
