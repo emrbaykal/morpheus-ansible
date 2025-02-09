@@ -22,6 +22,10 @@
         ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
       register: join_command_raw
       when: "'Azure' in morpheus['instance']['layoutName']"
+    
+    - name: command
+      debug:
+          var: join_command_raw.stdout_lines[0]
 
     - name: join kubernetes cluster
       shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
