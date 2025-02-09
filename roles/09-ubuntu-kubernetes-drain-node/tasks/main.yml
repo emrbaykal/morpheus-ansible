@@ -16,7 +16,21 @@
             ignore_daemonsets: true
         vars:
             ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-        delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+        delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
+        when: "'Amazon' in morpheus['instance']['layoutName']"
+
+      - name: Drain node from cluster
+        kubernetes.core.k8s_drain:
+          name: "{{ ansible_hostname }}"
+          state: drain
+          delete_options:
+            delete_emptydir_data: true
+            force: true
+            ignore_daemonsets: true
+        vars:
+            ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+        delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
+        when: "'Azure' in morpheus['instance']['layoutName']"
 
       - name: Reset kubeadm
         command: kubeadm reset --force
@@ -28,7 +42,18 @@
           name: "{{ ansible_hostname }}"
         vars:
             ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-        delegate_to: "{{ morpheus['customOptions']['k8_master_ip'] }}"
+        delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
+        when: "'Amazon' in morpheus['instance']['layoutName']"
+
+      - name: Delete node from cluster
+        kubernetes.core.k8s:
+          state: absent
+          kind: Node
+          name: "{{ ansible_hostname }}"
+        vars:
+            ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+        delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
+        when: "'Azure' in morpheus['instance']['layoutName']"
 
       - name: Remove Kubernetes packages
         apt:
