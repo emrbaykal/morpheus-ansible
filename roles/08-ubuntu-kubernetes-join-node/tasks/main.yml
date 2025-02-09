@@ -12,7 +12,7 @@
       delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
       vars:
         ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-      register: join_command_raw
+      register: join_command_aws_raw
       when: "'Amazon' in morpheus['instance']['layoutName']"
 
     - name: get join command to the master server
@@ -20,20 +20,26 @@
       delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
       vars:
         ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-      register: join_command_raw
+      register: join_command_azure_raw
       when: "'Azure' in morpheus['instance']['layoutName']"
-    
-    - name: command
-      debug:
-          var: join_command_raw
 
     - name: join kubernetes cluster
-      shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
-      register: join_result
+      shell: "{{ join_command_aws_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+      register: join_result_aws
+      when: "'Amazon' in morpheus['instance']['layoutName']
+
+    - name: join kubernetes cluster
+      shell: "{{ join_command_azure_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+      register: join_result_azure
+      when: "'Azure' in morpheus['instance']['layoutName']"
 
     - name: Kubernetes Cluster Node Join Result
       debug:
-        var: join_result.stdout_lines
+        var: join_result_aws.stdout_lines
+
+    - name: Kubernetes Cluster Node Join Result
+      debug:
+        var: join_result_azure.stdout_lines
 
     - name: Wait for node to be ready
       pause:
