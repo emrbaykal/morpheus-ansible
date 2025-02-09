@@ -26,7 +26,7 @@
     - name: join kubernetes cluster
       shell: "{{ join_command_aws_raw.stdout_lines[0] }} --ignore-preflight-errors all"
       register: join_result_aws
-      when: "'Amazon' in morpheus['instance']['layoutName']
+      when: "'Amazon' in morpheus['instance']['layoutName']"
 
     - name: join kubernetes cluster
       shell: "{{ join_command_azure_raw.stdout_lines[0] }} --ignore-preflight-errors all"
@@ -36,10 +36,12 @@
     - name: Kubernetes Cluster Node Join Result
       debug:
         var: join_result_aws.stdout_lines
+      when: "'Amazon' in morpheus['instance']['layoutName']"
 
     - name: Kubernetes Cluster Node Join Result
       debug:
         var: join_result_azure.stdout_lines
+      when: "'Azure' in morpheus['instance']['layoutName']"
 
     - name: Wait for node to be ready
       pause:
