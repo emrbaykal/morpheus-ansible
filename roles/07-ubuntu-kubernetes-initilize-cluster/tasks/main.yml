@@ -11,11 +11,18 @@
   with_items:
     - python3-pip
 
-- name: Install python packages
-  ansible.builtin.pip:
-    name: "{{ item }}"
-    executable: pip3
-    break_system_packages: true
+#- name: Install python packages
+#  ansible.builtin.pip:
+#    name: "{{ item }}"
+#    executable: pip3
+#    break_system_packages: true
+#  with_items:
+#    - PyYAML
+#    - jmespath
+#    - kubernetes
+
+- name: initialize K8S cluster
+  shell: pip3 install {{ item }} --break-system-packages
   with_items:
     - PyYAML
     - jmespath
