@@ -12,11 +12,10 @@
     - python3-pip
 
 - name: Install python packages
-  #ansible.builtin.pip:
-  pip:
+  ansible.builtin.pip:
     name: "{{ item }}"
     executable: pip3
-    #break_system_packages: true
+    break_system_packages: true
   with_items:
     - PyYAML
     - jmespath
