@@ -5,43 +5,63 @@
     path: /etc/kubernetes/kubelet.conf
   register: kubelet_conf
 
-- name: Join and label kubernetes node block
+- name: Join and label ESXI kubernetes node block
   block:
+  
+   - name: get join command to the master server
+     shell: kubeadm token create --print-join-command
+     delegate_to: "{{ hostvars[groups['esxi_kubernetes_master'][0]]['ansible_host'] }}"
+     vars:
+        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+     register: join_command_raw
+
+   - name: join kubernetes cluster
+     shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+     register: join_result
+
+   - name: Kubernetes Cluster Node Join Result
+     debug:
+        var: join_result.stdout_lines
+
+   - name: Wait for node to be ready
+     pause:
+        seconds: 60
+
+   - name: Label node as worker
+     kubernetes.core.k8s:
+        api_version: v1
+        kind: Node
+        name: "{{ ansible_hostname }}"
+        definition:
+          metadata:
+            labels:
+              node-role.kubernetes.io/worker: "worker"
+     delegate_to: "{{ hostvars[groups['esxi_kubernetes_master'][0]]['ansible_host'] }}"
+     vars:
+        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+
+  when: 
+    - not kubelet_conf.stat.exists
+    - "'ESXi' in morpheus['instance']['layoutName']"
+
+- name: Join and label AWS kubernetes node block
+  block:
+  
     - name: get join command to the master server
       shell: kubeadm token create --print-join-command
       delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
       vars:
         ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-      register: join_command_aws_raw
-      when: "'Amazon' in morpheus['instance']['layoutName']"
-
-    - name: get join command to the master server
-      shell: kubeadm token create --print-join-command
-      delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
-      vars:
-        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-      register: join_command_azure_raw
-      when: "'Azure' in morpheus['instance']['layoutName']"
+      register: join_command_raw
 
     - name: join kubernetes cluster
-      shell: "{{ join_command_aws_raw.stdout_lines[0] }} --ignore-preflight-errors all"
-      register: join_result_aws
-      when: "'Amazon' in morpheus['instance']['layoutName']"
+      shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+      register: join_result
 
-    - name: join kubernetes cluster
-      shell: "{{ join_command_azure_raw.stdout_lines[0] }} --ignore-preflight-errors all"
-      register: join_result_azure
-      when: "'Azure' in morpheus['instance']['layoutName']"
-
+    
     - name: Kubernetes Cluster Node Join Result
       debug:
-        var: join_result_aws.stdout_lines
-      when: "'Amazon' in morpheus['instance']['layoutName']"
-
-    - name: Kubernetes Cluster Node Join Result
-      debug:
-        var: join_result_azure.stdout_lines
-      when: "'Azure' in morpheus['instance']['layoutName']"
+        var: join_result.stdout_lines
 
     - name: Wait for node to be ready
       pause:
@@ -57,9 +77,36 @@
               labels:
                 node-role.kubernetes.io/worker: "worker"
       delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
-      when: "'Amazon' in morpheus['instance']['layoutName']"
       vars:
           ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+
+  when: 
+    - not kubelet_conf.stat.exists
+    - "'Amazon' in morpheus['instance']['layoutName']"
+
+
+- name: Join and label AZURE kubernetes node block
+  block:
+
+    - name: get join command to the master server
+      shell: kubeadm token create --print-join-command
+      delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
+      vars:
+        ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+      register: join_command_raw
+
+
+    - name: join kubernetes cluster
+      shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+      register: join_result
+
+    - name: Kubernetes Cluster Node Join Result
+      debug:
+        var: join_result.stdout_lines
+
+    - name: Wait for node to be ready
+      pause:
+        seconds: 60
 
     - name: Label node as worker
       kubernetes.core.k8s:
@@ -71,10 +118,11 @@
               labels:
                 node-role.kubernetes.io/worker: "worker"
       delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
-      when: "'Azure' in morpheus['instance']['layoutName']"
       vars:
           ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-  when: not kubelet_conf.stat.exists
+  when: 
+    - not kubelet_conf.stat.exists
+    - "'Azure' in morpheus['instance']['layoutName']"
 
 
 
