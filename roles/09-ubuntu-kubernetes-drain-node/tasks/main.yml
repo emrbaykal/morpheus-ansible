@@ -4,22 +4,97 @@
     path: /etc/kubernetes/kubelet.conf
   register: kubelet_conf
 
-- name: Drain kubernetes node block
+- name: Drain kubernetes node on ESXI 
   block:
-      - name: Drain node from cluster
-        kubernetes.core.k8s_drain:
+    - name: Drain node from ESXI K8 cluster
+      kubernetes.core.k8s_drain:
+        name: "{{ ansible_hostname }}"
+        state: drain
+        delete_options:
+          delete_emptydir_data: true
+          force: true
+          ignore_daemonsets: true
+      vars:
+          ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+      delegate_to: "{{ hostvars[groups['esxi_kubernetes_master'][0]]['ansible_host'] }}"
+
+    - name: Reset kubeadm on ESXI Worker Node
+      command: kubeadm reset --force
+    
+    - name: Delete node from ESXI K8 cluster
+      kubernetes.core.k8s:
+        state: absent
+        kind: Node
+        name: "{{ ansible_hostname }}"
+      vars:
+          ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+      delegate_to: "{{ hostvars[groups['esxi_kubernetes_master'][0]]['ansible_host'] }}"
+
+    - name: Remove Kubernetes packages on ESXI Worker Node
+      apt:
+        name: 
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: absent
+        purge: yes
+
+    - name: Remove .kube directory on ESXI Worker Node
+      file:
+        path: "~/.kube"
+        state: absent
+
+  when: 
+    - kubelet_conf.stat.exists
+    - "'ESXi' in morpheus['instance']['layoutName']"
+
+- name: Drain kubernetes node on AWS
+  block:
+     - name: Drain node from AWS K8 cluster
+       kubernetes.core.k8s_drain:
           name: "{{ ansible_hostname }}"
           state: drain
           delete_options:
             delete_emptydir_data: true
             force: true
             ignore_daemonsets: true
-        vars:
+       vars:
             ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-        delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
-        when: "'Amazon' in morpheus['instance']['layoutName']"
+       delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
 
-      - name: Drain node from cluster
+     - name: Reset kubeadm on AWD worker node 
+       command: kubeadm reset --force
+
+     - name: Delete node from AWS K8 cluster
+       kubernetes.core.k8s:
+          state: absent
+          kind: Node
+          name: "{{ ansible_hostname }}"
+       vars:
+            ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
+       delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
+
+     - name: Remove Kubernetes packages on AWS worker node
+       apt:
+         name: 
+           - kubelet
+           - kubeadm
+           - kubectl
+         state: absent
+         purge: yes
+
+     - name: Remove .kube directory on AWS worker node
+       file:
+         path: "~/.kube"
+         state: absent
+
+  when: 
+    - kubelet_conf.stat.exists
+    - "'Amazon' in morpheus['instance']['layoutName']"
+
+- name: Drain kubernetes node on AZURE
+  block:
+      - name: Drain node from Azure K8 cluster
         kubernetes.core.k8s_drain:
           name: "{{ ansible_hostname }}"
           state: drain
@@ -32,20 +107,10 @@
         delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
         when: "'Azure' in morpheus['instance']['layoutName']"
 
-      - name: Reset kubeadm
+      - name: Reset kubeadm on Azure Worker Node
         command: kubeadm reset --force
-        
-      - name: Delete node from cluster
-        kubernetes.core.k8s:
-          state: absent
-          kind: Node
-          name: "{{ ansible_hostname }}"
-        vars:
-            ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-        delegate_to: "{{ hostvars[groups['aws_kubernetes_master'][0]]['ansible_host'] }}"
-        when: "'Amazon' in morpheus['instance']['layoutName']"
 
-      - name: Delete node from cluster
+      - name: Delete node from Azure K8 cluster
         kubernetes.core.k8s:
           state: absent
           kind: Node
@@ -55,7 +120,7 @@
         delegate_to: "{{ hostvars[groups['azure_kubernetes_master'][0]]['ansible_host'] }}"
         when: "'Azure' in morpheus['instance']['layoutName']"
 
-      - name: Remove Kubernetes packages
+      - name: Remove Kubernetes packages on Azure Worker Node
         apt:
           name: 
             - kubelet
@@ -64,11 +129,13 @@
           state: absent
           purge: yes
 
-      - name: Remove .kube directory
+      - name: Remove .kube directory on Azure worker node
         file:
           path: "~/.kube"
           state: absent
-  when: kubelet_conf.stat.exists
+  when: 
+    - kubelet_conf.stat.exists
+    - "'Azure' in morpheus['instance']['layoutName']"
 
 
 
