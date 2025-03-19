@@ -42,7 +42,7 @@
 
   when: 
     - not kubelet_conf.stat.exists
-    - "'ESXi' in morpheus['instance']['layoutName']"
+    - "'VMware' in morpheus['instance']['layoutName']"
 
 - name: Join and label AWS kubernetes node block
   block:
