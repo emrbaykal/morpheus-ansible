@@ -52,19 +52,5 @@
             ipAddressPools:
             - default-pool
 
-    - name: Verify MetalLB deployment
-      kubernetes.core.k8s_info:
-        apiVersion: metallb.io/v1beta1
-        kind: "{{ item }}"
-        namespace: metallb-system
-      loop:
-        - IPAddressPool
-        - L2Advertisement
-      register: metallb_resources
-
-    - name: Display MetalLB deployment status
-      debug:
-        var: metallb_resources
-
   when: metallb_ns.resources | length == 0
   
