@@ -8,6 +8,7 @@
     name:
       - ca-certificates
       - curl
+      - nfs-common
     state: present
 
 - name: Create directory for apt keyrings
