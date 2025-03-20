@@ -1,17 +1,4 @@
 ---
-- name: Update apt package index
-  apt:
-    update_cache: yes
-  delegate_to: "{{ item }}"
-  loop: "{{ groups['kubernetes_nodes'] }}"
-
-- name: Install NFS client
-  apt:
-    name: nfs-common
-    state: present
-  delegate_to: "{{ item }}"
-  loop: "{{ groups['kubernetes_nodes'] }}"
-
 - name: Download NFS CSI Driver install script
   get_url:
     url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/v4.9.0/deploy/install-driver.sh
