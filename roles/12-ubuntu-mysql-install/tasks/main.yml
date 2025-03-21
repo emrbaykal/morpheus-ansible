@@ -12,12 +12,12 @@
 
 - name: Install mysql-apt-config package
   apt:
-    deb: files/mysql-apt-config_0.8.33-1_all.deb
+    deb: "{{ role_path }}files/mysql-apt-config_0.8.33-1_all.deb"
     state: present
 
 - name: Import MySQL GPG key
   apt_key:
-    file: files/mysql-apt-config_0.8.33-1_all.deb.asc
+    file: "{{ role_path }}files/mysql-apt-config_0.8.33-1_all.deb.asc"
     state: present
 
 - name: Update apt cache
