@@ -1,0 +1,45 @@
+---
+- name: Stop AppArmor service
+  systemd:
+    name: apparmor
+    state: stopped
+
+- name: Teardown AppArmor service
+  shell: service apparmor teardown
+
+- name: Disable AppArmor service
+  systemd:
+    name: apparmor
+    enabled: no
+
+- name: Install mysql-apt-config package
+  apt:
+    deb: mysql-apt-config_0.8.33-1_all.deb
+    state: present
+
+- name: Import MySQL GPG key
+  apt_key:
+    file: mysql-apt-config_0.8.33-1_all.dep.gpg
+    state: present
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install MySQL server and shell
+  apt:
+    name:
+      - mysql-server
+      - mysql-shell
+    state: present
+
+- name: Ensure MySQL service is started and enabled
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Hold MySQL server package version
+  dpkg_selections:
+    name: mysql-server
+    selection: hold
