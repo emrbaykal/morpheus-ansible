@@ -4,8 +4,6 @@
     name: apparmor
     state: stopped
 
-- name: Teardown AppArmor service
-  shell: service apparmor teardown
 
 - name: Disable AppArmor service
   systemd:
