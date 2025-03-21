@@ -1,4 +1,2 @@
 ---
 
-  apt:
-    update_cache: yes
