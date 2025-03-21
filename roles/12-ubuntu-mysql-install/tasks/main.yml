@@ -10,14 +10,22 @@
     name: apparmor
     enabled: no
 
+- name: Copy mysql-apt-config package to the target machine
+  copy:
+    src: "{{ role_path }}/files/{{ item }}"
+    dest: /tmp/mysql-apt-config_0.8.33-1_all.deb
+  with_items:
+    - mysql-apt-config_0.8.33-1_all.deb
+    - mysql-apt-config_0.8.33-1_all.deb.asc
+
 - name: Install mysql-apt-config package
   apt:
-    deb: "{{ role_path }}/files/mysql-apt-config_0.8.33-1_all.deb"
+    deb: /tmp/mysql-apt-config_0.8.33-1_all.deb
     state: present
 
 - name: Import MySQL GPG key
   apt_key:
-    file: "{{ role_path }}/files/mysql-apt-config_0.8.33-1_all.deb.asc"
+    file: /tmp/mysql-apt-config_0.8.33-1_all.deb.asc
     state: present
 
 - name: Update apt cache
