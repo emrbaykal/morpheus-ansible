@@ -13,7 +13,7 @@
 - name: Copy mysql-apt-config package to the target machine
   copy:
     src: "{{ role_path }}/files/{{ item }}"
-    dest: /tmp/mysql-apt-config_0.8.33-1_all.deb
+    dest: "/tmp/{{ item }}"
   with_items:
     - mysql-apt-config_0.8.33-1_all.deb
     - mysql-apt-config_0.8.33-1_all.deb.asc
