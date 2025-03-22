@@ -61,6 +61,9 @@
   notify:
       - Restart mysql
 
+- name: Flush handlers
+  meta: flush_handlers
+
 - name: Set root user password
   mysql_user:
     name: root
