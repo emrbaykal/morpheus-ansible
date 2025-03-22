@@ -78,7 +78,7 @@
   mysql_user:
     name: "{{admin_user}}"
     password: "{{admin_password}}"
-    priv: '*.*:ALL'
+    priv: '*.*:ALL,GRANT'
     host: '%'
     append_privs: yes
     login_user: root
