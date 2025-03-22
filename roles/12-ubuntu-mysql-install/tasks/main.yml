@@ -44,7 +44,7 @@
     state: started
     enabled: yes
 
-#- name: Hold MySQL server package version
-#  dpkg_selections:
-#    name: mysql-server
-#    selection: hold
+- name: Hold MySQL server package version
+  dpkg_selections:
+    name: mysql-server
+    selection: hold
