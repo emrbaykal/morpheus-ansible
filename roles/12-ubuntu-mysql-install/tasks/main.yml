@@ -23,30 +23,30 @@
     deb: /tmp/mysql-apt-config_0.8.33-1_all.deb
     state: present
 
-#- name: Import MySQL GPG key
-#  apt_key:
-#    file: /tmp/mysql-apt-config_0.8.33-1_all.deb.asc
-#    state: present
-#    validate_certs: no
+- name: Import MySQL GPG key
+  apt_key:
+    file: /tmp/mysql-apt-config_0.8.33-1_all.deb.asc
+    state: present
+    validate_certs: no
 
 - name: Update apt cache
   apt:
     update_cache: yes
 
-- name: Install MySQL server and shell
-  apt:
-    name:
-      - mysql-server
-      - mysql-shell
-    state: present
+#- name: Install MySQL server and shell
+#  apt:
+#    name:
+#      - mysql-server
+#      - mysql-shell
+#    state: present
 
-- name: Ensure MySQL service is started and enabled
-  systemd:
-    name: mysql
-    state: started
-    enabled: yes
+#- name: Ensure MySQL service is started and enabled
+#  systemd:
+#    name: mysql
+#    state: started
+#    enabled: yes
 
-- name: Hold MySQL server package version
-  dpkg_selections:
-    name: mysql-server
-    selection: hold
+#- name: Hold MySQL server package version
+#  dpkg_selections:
+#    name: mysql-server
+#    selection: hold
