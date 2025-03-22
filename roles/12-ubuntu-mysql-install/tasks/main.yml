@@ -85,6 +85,12 @@
     login_password: "{{root_password}}"
     state: present
 
+- name: Delete blank users
+  mysql_query:
+    query: "DELETE FROM mysql.user WHERE User='';"
+    login_user: root
+    login_password: "{{root_password}}"
+
 - name: Delete test database
   mysql_db:
     name: test
