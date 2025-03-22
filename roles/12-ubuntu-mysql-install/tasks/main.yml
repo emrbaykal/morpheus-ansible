@@ -118,7 +118,7 @@
       bind-address = 0.0.0.0
       max_connections = 451
       innodb_buffer_pool_size = 6G
-      innodb_buffer_poolinstances = 6
+      innodb_buffer_pool_instances = 6
       innodb_use_fdatasync = ON
       sql_generate_invisible_primary_key = 1
       binlog_expire_logs_seconds = 604800
