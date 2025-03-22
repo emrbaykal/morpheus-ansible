@@ -109,3 +109,28 @@
     query: "SET PERSIST sql_generate_invisible_primary_key=1;"
     login_user: root
     login_password: "{{root_password}}"
+
+- name: Create MySQL InnoDB configuration file
+  copy:
+    dest: /etc/mysql/mysql.conf.d/innodb-mysqld.conf
+    content: |
+      [mysqld]
+      bind-address = 0.0.0.0
+      max_connections = 451
+      innodb_buffer_pool_size = 6G
+      innodb_buffer_pool_instances = 6
+      innodb_use_fdatasync = ON
+      sql_generate_invisible_primary_key = 1
+      binlog_expire_logs_seconds = 604800
+      binlog_expire_logs_auto_purge = ON
+
+      [mysqldump]
+      set-gtid-purged = YES
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart mysql
+
+- name: Flush handlers
+  meta: flush_handlers
