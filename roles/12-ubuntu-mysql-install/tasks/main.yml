@@ -112,7 +112,7 @@
 
 - name: Create MySQL InnoDB configuration file
   copy:
-    dest: /etc/mysql/mysql.conf.d/innodb-mysqld.conf
+    dest: /etc/mysql/mysql.conf.d/innodb-mysqld.cnf
     content: |
       [mysqld]
       bind-address = 0.0.0.0
