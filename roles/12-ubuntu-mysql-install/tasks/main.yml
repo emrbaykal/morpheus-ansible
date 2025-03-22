@@ -16,35 +16,33 @@
     dest: "/tmp/{{ item }}"
   with_items:
     - mysql-apt-config_0.8.33-1_all.deb
-    - mysql-apt-config_0.8.33-1_all.deb.asc
 
 - name: Install mysql-apt-config package
   apt:
     deb: /tmp/mysql-apt-config_0.8.33-1_all.deb
     state: present
 
-#- name: Import MySQL GPG key
-#  apt_key:
-#    file: /tmp/mysql-apt-config_0.8.33-1_all.deb.asc
-#    state: present
-#    validate_certs: no
-
 - name: Update apt cache
   apt:
     update_cache: yes
 
-#- name: Install MySQL server and shell
-#  apt:
-#    name:
-#      - mysql-server
-#      - mysql-shell
-#    state: present
+- name: Installing Mysql
+  package:
+      name: "{{item}}"
+      state: present
+      update_cache: yes
+  loop:
+    - mysql-server
+    - mysql-client
+    - python3-mysqldb
+    - libmysqlclient-dev
 
-#- name: Ensure MySQL service is started and enabled
-#  systemd:
-#    name: mysql
-#    state: started
-#    enabled: yes
+
+- name: Ensure MySQL service is started and enabled
+  systemd:
+    name: mysql
+    state: started
+    enabled: yes
 
 #- name: Hold MySQL server package version
 #  dpkg_selections:
