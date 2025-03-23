@@ -36,7 +36,7 @@
           print("Creating cluster '" + clusterName + "'...");
           var cluster = dba.createCluster(clusterName, {
             multiPrimary: false,
-            primaryHost: host,
+            primary: host,
             force: true
           );
           print("Cluster created successfully!");
