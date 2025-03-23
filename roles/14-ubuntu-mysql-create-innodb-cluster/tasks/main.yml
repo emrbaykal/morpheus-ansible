@@ -38,7 +38,7 @@
             multiPrimary: false,
             primary: host,
             force: true
-          );
+          });
           print("Cluster created successfully!");
           print("Cluster status: " + JSON.stringify(cluster.status(), null, 2));
           
