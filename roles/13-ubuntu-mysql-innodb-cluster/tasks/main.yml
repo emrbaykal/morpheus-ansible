@@ -68,7 +68,9 @@
       var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
       var clusterAdmin = "{{ admin_user }}";
       var password = "{{ admin_password }}";
-      
+      var connectionString = clusterAdmin + "@" + host + ":3306";
+
+
       // Use try/catch for better error handling
       try {
         // Connect first with explicit credentials
@@ -89,9 +91,7 @@
           print("Instance is already configured for InnoDB Cluster usage.");
         } else {
           print("\nConfiguring instance...");
-          var config_result = dba.configureInstance({
-            restart: true
-          });
+          var config_result = dba.configureInstance();
           print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
         }
       } catch(e) {
