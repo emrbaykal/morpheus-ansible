@@ -1,75 +1,78 @@
 ---
-- name: Create MySQL Shell script for create InnoDB cluster
-  copy:
-    dest: "/tmp/configure_cluster.js"
-    content: |
-      // MySQL Shell script to configure cluster
-      var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
-      var clusterAdmin = "{{ admin_user }}";
-      var password = "{{ admin_password }}";
-      var clusterName = "{{ cluster_name }}";
-      var connection = clusterAdmin + "@" + primaryHost + ":3306";
+- block:
+  - name: Create MySQL Shell script for create InnoDB cluster
+    copy:
+      dest: "/tmp/configure_cluster.js"
+      content: |
+        // MySQL Shell script to configure cluster
+        var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
+        var clusterAdmin = "{{ admin_user }}";
+        var password = "{{ admin_password }}";
+        var clusterName = "{{ cluster_name }}";
+        var connection = clusterAdmin + "@" + primaryHost + ":3306";
 
-      // Use try/catch for better error handling
-      try {
-        // Connect first with explicit credentials
-        print("Connecting to instance...");
-        shell.connect({
-          host: host,
-          user: clusterAdmin, 
-          password: password
-        });
-        
-        print("Connected successfully!");
+        // Use try/catch for better error handling
+        try {
+          // Connect first with explicit credentials
+          print("Connecting to instance...");
+          shell.connect({
+            host: host,
+            user: clusterAdmin, 
+            password: password
+          });
+          
+          print("Connected successfully!");
 
-        // Create Cluster
-        print("Creating cluster '" + clusterName + "'...");
-        var cluster = dba.createCluster(clusterName, {
-          multiPrimary: false,
-          force: true
-        });
-        print("Cluster created successfully!");
-        print("Cluster status: " + JSON.stringify(cluster.status(), null, 2));
-        
-      } catch(e) {
-        print("ERROR: " + e.message);
-        // Exit with error code for Ansible to detect failure
-        os.exit(1);
-      }
-    mode: '0600'
-  no_log: true
+          // Create Cluster
+          print("Creating cluster '" + clusterName + "'...");
+          var cluster = dba.createCluster(clusterName, {
+            multiPrimary: false,
+            force: true
+          });
+          print("Cluster created successfully!");
+          print("Cluster status: " + JSON.stringify(cluster.status(), null, 2));
+          
+        } catch(e) {
+          print("ERROR: " + e.message);
+          // Exit with error code for Ansible to detect failure
+          os.exit(1);
+        }
+      mode: '0600'
+    no_log: true
 
-- name: Create MySQL config file with credentials
-  copy:
-    dest: "/tmp/.mylogin.cnf"
-    content: |
-      [client]
-      user={{ admin_user }}
-      password={{ admin_password }}
-      host={{ hostvars[inventory_hostname]['ansible_hostname'] }}
-    mode: '0600'
-  no_log: true
+  - name: Create MySQL config file with credentials
+    copy:
+      dest: "/tmp/.mylogin.cnf"
+      content: |
+        [client]
+        user={{ admin_user }}
+        password={{ admin_password }}
+        host={{ hostvars[inventory_hostname]['ansible_hostname'] }}
+      mode: '0600'
+    no_log: true
 
-- name: Execute MySQL Shell configuration script
-  shell: >
-    mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
-  register: mysqlsh_output
-  failed_when: mysqlsh_output.rc != 0
+  - name: Execute MySQL Shell configuration script
+    shell: >
+      mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_cluster.js
+    register: mysqlsh_output
+    failed_when: mysqlsh_output.rc != 0
 
-- name: Display MySQL Shell output
-  debug:
-    var: mysqlsh_output.stdout_lines
+  - name: Display MySQL Shell output
+    debug:
+      var: mysqlsh_output.stdout_lines
 
-- name: Restart mysql
-  service:
-    name: mysql
-    state: restarted
+  - name: Restart mysql
+    service:
+      name: mysql
+      state: restarted
 
-- name: Clean up temporary files
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-    - "/tmp/configure_instance.js"
-    - "/tmp/.mylogin.cnf"
-  no_log: true
+  - name: Clean up temporary files
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - "/tmp/configure_cluster.js"
+      - "/tmp/.mylogin.cnf"
+    no_log: true
+  
+  when: inventory_hostname == groups['mysql_test'][0]
