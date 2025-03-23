@@ -4,7 +4,7 @@
     msg: 
       - "Current inventory_hostname: {{ inventory_hostname }}"
       - "ansible_fqdn: {{ ansible_fqdn }}"
-      - "Instance Name: morpheus['instance']['layoutName']"
+      - Instance Name: morpheus['instance']['layoutName']
       - "Groups defined: {{ groups.keys() | list }}"
       - "mysql_test group exists: {{ 'mysql_test' in groups }}"
       - "First host in mysql_test (if exists): {{ groups['mysql_test'][0] if 'mysql_test' in groups else 'Group not defined' }}"
