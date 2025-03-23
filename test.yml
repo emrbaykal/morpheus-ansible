@@ -18,7 +18,7 @@
           - "ansible_fqdn: {{ ansible_fqdn }}"
           - "Instance Name: {{ morpheus['instance']['name'] }}"
           - "Host Name: {{ ansible_hostname }}"
-       when: morpheus['instance']['name'] == morpheus['instance']['hostname'] 
+       when: morpheus['instance']['name'] == ansible_hostname
 
 
 
