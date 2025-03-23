@@ -21,3 +21,8 @@
          tags:
            - role::mysql
            - role::mysql::install-mysql
+
+       - role: 13-ubuntu-mysql-innodb-cluster
+         tags:
+           - role::mysql
+           - role::mysql::inodb-cluster
