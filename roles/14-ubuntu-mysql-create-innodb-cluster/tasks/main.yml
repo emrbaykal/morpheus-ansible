@@ -74,4 +74,4 @@
       - "/tmp/.mylogin.cnf"
     no_log: true
   
-  when: ansible_fqdn == groups['mysql_test'][0]
+  when: groups['mysql_test'] is defined and inventory_hostname == groups['mysql_test'][0]
