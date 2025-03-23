@@ -34,11 +34,7 @@
 
           // Create Cluster
           print("Creating cluster '" + clusterName + "'...");
-          var cluster = dba.createCluster(clusterName, {
-            multiPrimary: false,
-            primaryHost: host,
-            force: true
-          });
+          var cluster = dba.createCluster(clusterName);
           print("Cluster created successfully!");
           print("Cluster status: " + JSON.stringify(cluster.status(), null, 2));
           
