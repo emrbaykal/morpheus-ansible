@@ -72,14 +72,45 @@
   meta: flush_handlers
 
 - block:
-  
+  - name: Create MySQL config file with credentials
+    copy:
+       dest: "/tmp/.mylogin.cnf"
+       content: |
+         [client]
+         user={{ admin_user }}
+         password={{ admin_password }}
+         host={{ hostvars[inventory_hostname]['ansible_hostname'] }}
+       mode: '0600'
+    no_log: true
+
   - name: Create MySQL Shell script for instance configuration
     copy:
       dest: "/tmp/configure_instance.js"
       content: |
+        // MySQL Shell script to check and configure instance
+        var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
+        var clusterAdmin = "{{ admin_user }}";
+        var password = "{{ admin_password }}";
+        var dbHosts = "{{ groups['mysql_test'] | default([]) }}";
+
+        for (let i = 1; i <= numNodes; i++) {
+            var hostName = shell.prompt('Hostname for node' + i + ': ');
+            dbHosts.push(hostName);
+        }
 
       mode: '0600'
     no_log: true
+
+  - name: Execute MySQL Shell configuration script
+    shell: >
+       mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
+    register: mysqlsh_output
+    failed_when: mysqlsh_output.rc != 0
+
+  - name: Display MySQL Shell output
+    debug:
+      var: mysqlsh_output.stdout_lines
+
   - name: Clean up temporary files
     file:
       path: "{{ item }}"
