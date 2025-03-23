@@ -71,6 +71,27 @@
 - name: Flush handlers
   meta: flush_handlers
 
+- block:
+  
+  - name: Create MySQL Shell script for instance configuration
+    copy:
+      dest: "/tmp/configure_instance.js"
+      content: |
+
+      mode: '0600'
+    no_log: true
+  - name: Clean up temporary files
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - "/tmp/configure_instance.js"
+      - "/tmp/.mylogin.cnf"
+    no_log: true
+
+  when: morpheus['instance']['name'] == ansible_hostname
+
+
 #- name: Create MySQL Shell script for instance configuration
 #  copy:
 #    dest: "/tmp/configure_instance.js"
@@ -139,11 +160,4 @@
 #    name: mysql
 #    state: restarted
 
-- name: Clean up temporary files
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-    - "/tmp/configure_instance.js"
-    - "/tmp/.mylogin.cnf"
-  no_log: true
+

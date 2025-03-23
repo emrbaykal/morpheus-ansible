@@ -9,7 +9,7 @@
   tasks:
      - name: Print hostname
        debug:
-         msg: "Hostname: {{ morpheus['instance']['name'] }}"
+         msg: "dbHosts: [mysql_test] "
 
      - name: Debug inventory information
        debug:
