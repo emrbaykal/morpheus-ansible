@@ -16,10 +16,8 @@
          msg: 
           - "Current inventory_hostname: {{ inventory_hostname }}"
           - "ansible_fqdn: {{ ansible_fqdn }}"
-          - "Instance Name: {{ morpheus['instance']['hostname'] }}"
-          - "Groups defined: {{ groups.keys() | list }}"
-          - "mysql_test group exists: {{ 'mysql_test' in groups }}"
-          - "First host in mysql_test (if exists): {{ groups['mysql_test'][0] if 'mysql_test' in groups else 'Group not defined' }}"
+          - "Instance Name: {{ morpheus['instance']['name'] }}"
+          - "Instance Host Name: {{ morpheus['instance']['hostname'] }}"
        when: morpheus['instance']['name'] == morpheus['instance']['hostname'] 
 
 
