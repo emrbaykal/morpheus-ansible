@@ -1,4 +1,15 @@
 ---
+- name: Debug inventory information
+  debug:
+    msg: 
+      - "Current inventory_hostname: {{ inventory_hostname }}"
+      - "ansible_fqdn: {{ ansible_fqdn }}"
+      - "Instance Name: morpheus['instance']['layoutName']"
+      - "Groups defined: {{ groups.keys() | list }}"
+      - "mysql_test group exists: {{ 'mysql_test' in groups }}"
+      - "First host in mysql_test (if exists): {{ groups['mysql_test'][0] if 'mysql_test' in groups else 'Group not defined' }}"
+
+
 - name: Create Cluster Admin
   mysql_user:
     name: "{{admin_user}}"
@@ -60,73 +71,73 @@
 - name: Flush handlers
   meta: flush_handlers
 
-- name: Create MySQL Shell script for instance configuration
-  copy:
-    dest: "/tmp/configure_instance.js"
-    content: |
-      // MySQL Shell script to check and configure instance
-      var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
-      var clusterAdmin = "{{ admin_user }}";
-      var password = "{{ admin_password }}";
-      var connectionString = clusterAdmin + "@" + host + ":3306";
+#- name: Create MySQL Shell script for instance configuration
+#  copy:
+#    dest: "/tmp/configure_instance.js"
+#    content: |
+#      // MySQL Shell script to check and configure instance
+#      var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
+#      var clusterAdmin = "{{ admin_user }}";
+#      var password = "{{ admin_password }}";
+#      var connectionString = clusterAdmin + "@" + host + ":3306";
+#
+#
+#      // Use try/catch for better error handling
+#      try {
+#        // Connect first with explicit credentials
+#        print("Connecting to instance...");
+#        shell.connect({
+#          host: host,
+#          user: clusterAdmin, 
+#          password: password
+#        });
+#        
+#        print("Connected successfully!");
+#        
+#        print("Checking instance configuration...");
+#        var result = dba.checkInstanceConfiguration();
+#        print("Instance check result: " + JSON.stringify(result, null, 2));
+#        
+#        if (result.status == "ok") {
+#          print("Instance is already configured for InnoDB Cluster usage.");
+#        } else {
+#          print("\nConfiguring instance...");
+#          var config_result = dba.configureInstance();
+#          print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
+#        }
+#      } catch(e) {
+#        print("ERROR: " + e.message);
+#        // Exit with error code for Ansible to detect failure
+#        os.exit(1);
+#      }
+#    mode: '0600'
+#  no_log: true
 
+#- name: Create MySQL config file with credentials
+#  copy:
+#    dest: "/tmp/.mylogin.cnf"
+#    content: |
+#      [client]
+#      user={{ admin_user }}
+#      password={{ admin_password }}
+#      host={{ hostvars[inventory_hostname]['ansible_hostname'] }}
+#    mode: '0600'
+#  no_log: true
 
-      // Use try/catch for better error handling
-      try {
-        // Connect first with explicit credentials
-        print("Connecting to instance...");
-        shell.connect({
-          host: host,
-          user: clusterAdmin, 
-          password: password
-        });
-        
-        print("Connected successfully!");
-        
-        print("Checking instance configuration...");
-        var result = dba.checkInstanceConfiguration();
-        print("Instance check result: " + JSON.stringify(result, null, 2));
-        
-        if (result.status == "ok") {
-          print("Instance is already configured for InnoDB Cluster usage.");
-        } else {
-          print("\nConfiguring instance...");
-          var config_result = dba.configureInstance();
-          print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
-        }
-      } catch(e) {
-        print("ERROR: " + e.message);
-        // Exit with error code for Ansible to detect failure
-        os.exit(1);
-      }
-    mode: '0600'
-  no_log: true
+#- name: Execute MySQL Shell configuration script
+#  shell: >
+#    mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
+#  register: mysqlsh_output
+#  failed_when: mysqlsh_output.rc != 0
 
-- name: Create MySQL config file with credentials
-  copy:
-    dest: "/tmp/.mylogin.cnf"
-    content: |
-      [client]
-      user={{ admin_user }}
-      password={{ admin_password }}
-      host={{ hostvars[inventory_hostname]['ansible_hostname'] }}
-    mode: '0600'
-  no_log: true
+#- name: Display MySQL Shell output
+#  debug:
+#    var: mysqlsh_output.stdout_lines
 
-- name: Execute MySQL Shell configuration script
-  shell: >
-    mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
-  register: mysqlsh_output
-  failed_when: mysqlsh_output.rc != 0
-
-- name: Display MySQL Shell output
-  debug:
-    var: mysqlsh_output.stdout_lines
-
-- name: Restart mysql
-  service:
-    name: mysql
-    state: restarted
+#- name: Restart mysql
+#  service:
+#    name: mysql
+#    state: restarted
 
 - name: Clean up temporary files
   file:
