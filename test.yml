@@ -9,7 +9,7 @@
   tasks:
      - name: Print hostname
        debug:
-         msg: "dbHosts: [mysql_test] "
+         msg: "dbHosts: {{ groups[mysql_tes] | join(', ') }}"
 
      - name: Debug inventory information
        debug:
