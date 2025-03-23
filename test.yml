@@ -17,7 +17,7 @@
           - "Current inventory_hostname: {{ inventory_hostname }}"
           - "ansible_fqdn: {{ ansible_fqdn }}"
           - "Instance Name: {{ morpheus['instance']['name'] }}"
-          - "Instance Host Name: {{ morpheus['instance']['hostname'] }}"
+          - "Host Name: {{ ansible_hostname }}"
        when: morpheus['instance']['name'] == morpheus['instance']['hostname'] 
 
 
