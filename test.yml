@@ -7,10 +7,6 @@
     ansible_user: hpe
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   tasks:
-     - name: Print hostname
-       debug:
-         msg: "Hostname: {{ morpheus['instance']['layoutName'] }}"
-
      - name: Debug inventory information
        debug:
          msg: 
@@ -19,8 +15,7 @@
            - "Groups defined: {{ groups.keys() | list }}"
            - "mysql_test group exists: {{ 'mysql_test' in groups }}"
            - "First host in mysql_test (if exists): {{ groups['mysql_test'][0] if 'mysql_test' in groups else 'Group not defined' }}"
-
-
+       when: inventory_hostname == groups['mysql_test'][0]
 
 
   
