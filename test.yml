@@ -9,7 +9,7 @@
   tasks:
      - name: Print hostname
        debug:
-         msg: "Hostname: {{ morpheus['instance']['environmentVariables'] }}"
+         var: morpheus['instance']
 
      - name: Debug inventory information
        debug:
