@@ -123,11 +123,16 @@
   debug:
     var: mysqlsh_output.stdout_lines
 
-#- name: Clean up temporary files
-#  file:
-#    path: "{{ item }}"
-#    state: absent
-#  with_items:
-#    - "/tmp/configure_instance.js"
-#    - "/tmp/.mylogin.cnf"
-#  no_log: true
+- name: Restart mysql
+  service:
+    name: mysql
+    state: restarted
+
+- name: Clean up temporary files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/tmp/configure_instance.js"
+    - "/tmp/.mylogin.cnf"
+  no_log: true
