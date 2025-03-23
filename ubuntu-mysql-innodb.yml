@@ -31,3 +31,5 @@
          tags:
            - role::mysql
            - role::mysql::inodb-cluster-create
+         delegate_to: "{{ groups['mysql_cluster'][0] }}"
+         when: inventory_hostname == groups['mysql_cluster'][0]
