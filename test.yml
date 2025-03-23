@@ -9,7 +9,7 @@
   tasks:
      - name: Print hostname
        debug:
-         msg: "{{ groups['mysql_test'] | default([]) | join(', ') }}"
+         msg: "{{ groups['mysql_test'] | default([]) }}"
 
      - name: Debug inventory information
        debug:
