@@ -90,13 +90,13 @@
     mode: '0600'
   no_log: true
 
-#- name: Execute MySQL Shell configuration script
-#  command: mysqlsh --no-wizard --execute="source('/tmp/configure_instance.js')"
-#  register: mysqlsh_output
+- name: Execute MySQL Shell configuration script
+  command: mysqlsh --no-wizard --execute="source('/tmp/configure_instance.js')"
+  register: mysqlsh_output
 
-#- name: Display MySQL Shell output
-#  debug:
-#    var: mysqlsh_output.stdout_lines
+- name: Display MySQL Shell output
+  debug:
+    var: mysqlsh_output.stdout_lines
 
 #- name: Clean up temporary files
 #  file:
