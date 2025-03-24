@@ -88,7 +88,7 @@
         var host = "{{ inventory_hostname }}";
         var clusterAdmin = "{{ morpheus['customOptions']['innodb_admin_user'] }}";
         var password = "{{ morpheus['customOptions']['innodb_admin_password'] }}";
-        var dbHosts = {{ (groups[morpheus['customOptions']['ansible_group']] | default(group['mysql_cluster_nodes'])) | default([]) | to_json }};     
+        var dbHosts = JSON.parse("{{ groups[morpheus['customOptions']['ansibe_group']] | default([]) | to_json }}");
         var clusterName = "{{ morpheus['customOptions']['innodb_cls_name'] }}";
 
         function sleep(milliseconds) {
@@ -170,7 +170,7 @@
             setupCluster();
  
       mode: '0600'
-   #no_log: true
+    #no_log: true
 
   - name: Execute MySQL Shell configuration script
     shell: >
