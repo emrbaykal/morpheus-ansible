@@ -116,7 +116,7 @@
              
                print("Checking instance configuration...");
               // var result = dba.checkInstanceConfiguration();
-               var result = dba.checkInstanceConfiguration('root@' + dbHosts[n] + ':3306', {password: 'password'});
+               var result = dba.checkInstanceConfiguration({host: dbHosts[n], user: 'root', password: 'password'});
                print("Instance check result: " + JSON.stringify(result, null, 2));
                }      
         }
