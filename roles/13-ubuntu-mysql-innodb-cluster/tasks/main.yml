@@ -101,8 +101,8 @@
         } while (currentDate - date < milliseconds);
         }
         
-        // print('\nNumber of Hosts: ' + dbHosts.length + '\n');
-        // print('\nList of hosts:\n');
+        print('\nNumber of Hosts: ' + dbHosts.length );
+        print('\nList of hosts:\n');
 
         for (var i = 0; i < dbHosts.length; i++) {
         print("Host " + i + ": " + dbHosts[i]);
