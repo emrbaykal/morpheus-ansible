@@ -135,8 +135,16 @@
               print("Setting up InnoDB Cluster on " + host + ".\n\n");
               shell.connect({ host: host, user: clusterAdmin, password: password });
 
-              var cluster = dba.createCluster(clusterName);
-              print(cluster);
+              var cluster_result = dba.getCluster();
+
+              if (cluster_result.status == "ok") {
+                  print("Instance " + dbHosts[n] + " already belongs to an InnoDB cluster.");
+                } else {
+                 print('Setting up InnoDB Cluster.\n\n');
+                  var cluster = dba.createCluster(clusterName);
+                  print("Instance configuration result: " + JSON.stringify(cluster, null, 2));
+                }
+
          }
 
         try {
