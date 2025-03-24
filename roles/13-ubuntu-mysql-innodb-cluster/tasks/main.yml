@@ -105,7 +105,7 @@
         print('\nList of hosts:\n');
 
         for (let s = 0; s < dbHosts.length; s++) {
-        print('Host: ' + dbHosts[s] + '\n');
+        print("Host " + i + ": " + dbHosts[i]);
         }
 
       mode: '0600'
