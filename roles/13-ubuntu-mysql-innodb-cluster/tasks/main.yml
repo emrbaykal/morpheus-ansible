@@ -112,10 +112,11 @@
 
              for (var n = 0; n < dbHosts.length; n++) { print('\n=> ');
 
-               shell.connect({ host: dbHosts[n], user: clusterAdmin, password: password });
+              // shell.connect({ host: dbHosts[n], user: clusterAdmin, password: password });
              
                print("Checking instance configuration...");
-               var result = dba.checkInstanceConfiguration();
+              // var result = dba.checkInstanceConfiguration();
+               var result = dba.checkInstanceConfiguration('root@' + dbHosts[n] + ':3306', ' password: password ' });
                print("Instance check result: " + JSON.stringify(result, null, 2));
                }      
         }
