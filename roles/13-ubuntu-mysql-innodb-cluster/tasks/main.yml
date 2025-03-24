@@ -92,6 +92,8 @@
         var clusterAdmin = "{{ admin_user }}";
         var password = "{{ admin_password }}";
         var dbHosts = JSON.parse('{{ groups["mysql_test"] | default([]) | to_json }}');
+        var clusterName = "{{ cluster_name }}";
+
         function sleep(milliseconds) {
         const date = Date.now();
         let currentDate = null;
@@ -125,7 +127,13 @@
                   var config_result = dba.configureInstance({host: dbHosts[n], user: clusterAdmin, password: password}, {restart: true})
                   print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
                 }
-             }      
+             }
+
+             print('\nConfiguring Instances completed.\n\n');
+             sleep(5000);      
+
+              print('Setting up InnoDB Cluster.\n\n');
+              // shell.connect({ user: 'root', password: dbPass, host: dbHosts[0], port: 3306 });
         }
 
 
