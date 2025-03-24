@@ -148,7 +148,7 @@
 
                  try {
                     print('Adding instances to the cluster.\n');
-                   //print("Adding instance " + dbHosts[i] " to the cluster.\n");
+                    print("Adding instance " + dbHosts[i] " to the cluster." + "\n");
                    //add_cluster = cluster.addInstance({dbHosts[i]:3306})
                   //print("\nInstance " + dbHosts[i] " successfully added to the cluster.\n");
                   } catch (e) {
