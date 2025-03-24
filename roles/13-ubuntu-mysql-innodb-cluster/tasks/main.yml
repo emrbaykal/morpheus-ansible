@@ -144,7 +144,7 @@
 
               print('Adding instances to the cluster.\n');
 
-              cluster = cluster = dba.getCluster();
+              cluster = dba.getCluster();
 
               for (var i = 0; i < dbHosts.length; i++) { print('\n=> ');
                  // Skip the primary node - it's already in the cluster
