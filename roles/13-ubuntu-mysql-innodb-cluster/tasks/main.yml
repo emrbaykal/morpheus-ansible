@@ -137,11 +137,16 @@
 
               var cluster = dba.createCluster(clusterName);
               print(cluster);
+         }
+
+        try {
+            setupCluster();
+ 
+            print('\nInnoDB cluster deployed successfully.\n');
+        } catch (e) {
+            print('\nThe InnoDB cluster could not be created.\n');
+            print(e + '\n');
         }
-
-
-        setupCluster();
-        
 
       mode: '0600'
     no_log: true
