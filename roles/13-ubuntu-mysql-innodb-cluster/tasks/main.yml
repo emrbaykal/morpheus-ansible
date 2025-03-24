@@ -144,7 +144,9 @@
 
               print('Adding instances to the cluster.\n');
 
-              
+              for (var i = 0; i < dbHosts.length; i++) { print('\n=> ');
+
+              }
 
           }
 
