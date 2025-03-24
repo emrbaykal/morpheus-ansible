@@ -134,7 +134,6 @@
 
               print("Setting up InnoDB Cluster on " + host + ".\n\n");
               shell.connect({ host: host, user: clusterAdmin, password: password });
-              //shell.connect({ user: 'root', password: dbPass, host: dbHosts[0], port: 3306 });
 
               var cluster = dba.createCluster(clusterName);
               print(cluster);
