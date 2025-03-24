@@ -105,10 +105,10 @@
         print('\nList of hosts:\n');
 
         for (var i = 0; i < dbHosts.length; i++) {
-        print("Host " + i + ": " + dbHosts[i]);
+        print("Host " + i + ": " + dbHosts[i] + "\n");
         }
 
-        
+
 
       mode: '0600'
     no_log: true
