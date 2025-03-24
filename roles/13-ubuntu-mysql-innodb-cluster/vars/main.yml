@@ -1,11 +1,11 @@
 ---
 
-root_password: HP1nv3nt!
-admin_user: clusterAdmin
-admin_password: Password123?
-db_name: morpheus
-password_validation_policy: 1     
-cluster_name: morpheus-cluster
+#root_password: HP1nv3nt!
+#admin_user: clusterAdmin
+#admin_password: Password123?
+#db_name: morpheus
+#password_validation_policy: 1     
+#cluster_name: morpheus-cluster
 
 # 0 - Low
 # 1 - Medium

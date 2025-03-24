@@ -68,7 +68,8 @@
 - name: Set root user password
   mysql_user:
     name: root
-    password: "{{root_password}}"
+    # password: "{{root_password}}"
+    password: "{{ morpheus['customOptions']['mysql_root_password'] }}"
     login_unix_socket: /var/run/mysqld/mysqld.sock
     host: localhost
     login_user: root
