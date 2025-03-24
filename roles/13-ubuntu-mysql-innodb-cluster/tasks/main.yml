@@ -146,7 +146,17 @@
 
               for (var i = 0; i < dbHosts.length; i++) { print('\n=> ');
 
+                 try {
+                    print("Adding instance " + dbHosts[i] " to the cluster.\n");
+                    cluster.addInstance({dbHosts[i]:3306});
+                    print("\nInstance " + dbHosts[i] " successfully added to the cluster.\n");
+                    } catch (e) {
+                      print('\nThe Instabce could not be addet to the cluster.\n');
+                      print(e + '\n');
+                  }
+
               }
+
 
           }
 
