@@ -112,24 +112,19 @@
 
              for (var n = 0; n < dbHosts.length; n++) { print('\n=> ');
 
-                // shell.connect({ host: dbHosts[n], user: clusterAdmin, password: password });
+                shell.connect({ host: dbHosts[n], user: clusterAdmin, password: password });
+                print("Connected dbHosts[n] successfully!" + "\n");
              
-                 print("Checking instance configuration...");
-                 var result = dba.checkInstanceConfiguration({host: dbHosts[n], user: clusterAdmin, password: password});
+                print("Checking instance configuration...");
+                var result = dba.checkInstanceConfiguration();
+                
+                //var result = dba.checkInstanceConfiguration({host: dbHosts[n], user: clusterAdmin, password: password});
                 // print("Instance check result: " + JSON.stringify(result, null, 2));
 
                 if (result.status == "ok") {
                   print("Instance is already configured on dbHosts[n] for InnoDB Cluster usage.");
                 } else {
-                 print("\nConfiguring instance...");
-                 var config_result = dba.configureInstance({host: dbHosts[n], user: clusterAdmin, password: password}, {
-                    clusterAdmin: clusterAdmin, 
-                    clusterAdminPassword: password, 
-                    interactive: false, 
-                    restart: true,
-                    applierWorkerThreads: 4
-                 });
-                 print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
+                  print("\nConfiguring instance...");
                 }
              }      
         }
