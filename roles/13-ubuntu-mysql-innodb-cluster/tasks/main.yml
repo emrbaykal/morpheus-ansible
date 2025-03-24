@@ -129,8 +129,8 @@
                 }
              }
 
-             print('\nConfiguring Instances completed.\n\n');
-             sleep(5000);      
+              print('\nConfiguring Instances completed.\n\n');
+              sleep(5000);      
 
               print("Setting up InnoDB Cluster on " + host + ".\n\n");
               shell.connect({ host: host, user: clusterAdmin, password: password });
@@ -157,14 +157,14 @@
     debug:
       var: mysqlsh_output.stdout_lines
 
-  - name: Clean up temporary files
-    file:
-      path: "{{ item }}"
-      state: absent
-    with_items:
-      - "/tmp/configure_instance.js"
-      - "/tmp/.mylogin.cnf"
-    no_log: true
+  #- name: Clean up temporary files
+  #  file:
+  #    path: "{{ item }}"
+  #    state: absent
+  #  with_items:
+  #    - "/tmp/configure_instance.js"
+  #    - "/tmp/.mylogin.cnf"
+  #  no_log: true
 
   when: morpheus['instance']['name'] == ansible_hostname
 
