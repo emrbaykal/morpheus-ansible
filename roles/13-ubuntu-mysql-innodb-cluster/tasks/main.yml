@@ -112,10 +112,10 @@
 
              for (var n = 0; n < dbHosts.length; n++) { print('\n=> ');
              
-
                print("Checking instance configuration...");
-               var result = dba.checkInstanceConfiguration('root@' + dbHosts[n] + ':3306', { password: password  });
+               var result = dba.checkInstanceConfiguration('root@' + dbHosts[n] + ':3306', { password: password, interactive: false  });
                print("Instance check result: " + JSON.stringify(result, null, 2));
+               }      
         }
 
 
