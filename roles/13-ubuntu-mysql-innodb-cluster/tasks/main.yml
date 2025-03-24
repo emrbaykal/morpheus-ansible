@@ -144,12 +144,18 @@
 
               print('Adding instances to the cluster.\n');
 
+              cluster = cluster = dba.getCluster();
+
               for (var i = 0; i < dbHosts.length; i++) { print('\n=> ');
+                 // Skip the primary node - it's already in the cluster
+                 if (dbHosts[i] === host) {
+                     print("Skipping primary node " + host);
+                     continue;
+                 }
 
                  try {
                      print("Adding instance " + dbHosts[i] + " to the cluster." + "\n");
-                     cluster.addInstance('clusterAdmin@' + dbHosts[i] + ':3306', { password: password, recoveryMethod: 'clone' });
-                     //add_cluster = cluster.addInstance(dbHosts[i]);
+                     add_cluster = cluster.addInstance(dbHosts[i]);
                     // print("\n" + "Instance " + dbHosts[i] + " successfully added to the cluster." + "\n");
                   } catch (e) {
                       print('\nThe Instabce could not be addet to the cluster.\n');
