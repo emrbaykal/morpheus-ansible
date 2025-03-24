@@ -122,7 +122,7 @@
                   print("Instance is already configured on dbHosts[n] for InnoDB Cluster usage.");
                 } else {
                  print("\nConfiguring instance...");
-                 var config_result = dba.configureInstance('clusterAdmi@' + dbHosts[n] + ':3306', { clusterAdmin: clusterAdmin, clusterAdminPassword: password, interactive: false, restart: true});
+                 var config_result = dba.configureInstance(clusterAdmin + '@' + dbHosts[n] + ':3306', { clusterAdmin: clusterAdmin, clusterAdminPassword: password, interactive: false, restart: true});
                  print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
                 }
              }      
