@@ -103,7 +103,11 @@
         
         print('\nNumber of Hosts: ' + dbHosts.length + '\n');
         print('\nList of hosts:\n');
-        
+
+        for (let s = 0; s < dbHosts.length; s++) {
+        print('Host: ' + dbHosts[s] + '\n');
+        }
+
       mode: '0600'
     no_log: true
 
