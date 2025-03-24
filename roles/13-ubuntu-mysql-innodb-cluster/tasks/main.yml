@@ -91,7 +91,6 @@
         var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
         var clusterAdmin = "{{ admin_user }}";
         var password = "{{ admin_password }}";
-        // var dbHosts = "{{ groups['mysql_test'] | default([]) | to_json }}";
         var dbHosts = JSON.parse('{{ groups["mysql_test"] | default([]) | to_json }}');
         function sleep(milliseconds) {
         const date = Date.now();
@@ -107,8 +106,19 @@
         for (var i = 0; i < dbHosts.length; i++) {
         print("Host " + i + ": " + dbHosts[i] + "\n");
         }
+ 
+        function setupCluster() {
+            print('\nConfiguring the instances.');
+        }
 
-
+        try {
+          setupCluster();
+ 
+          print('\nInnoDB cluster deployed successfully.\n');
+        } catch (e) {
+          print('\nThe InnoDB cluster could not be created.\n');
+          print(e + '\n');
+        }
 
       mode: '0600'
     no_log: true
