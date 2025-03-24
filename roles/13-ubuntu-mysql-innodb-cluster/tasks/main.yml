@@ -91,8 +91,8 @@
         var host = "{{ hostvars[inventory_hostname]['ansible_hostname'] }}";
         var clusterAdmin = "{{ admin_user }}";
         var password = "{{ admin_password }}";
-        var dbHosts = "{{ groups['mysql_test'] | default([]) | to_json }}";
-
+        // var dbHosts = "{{ groups['mysql_test'] | default([]) | to_json }}";
+        var dbHosts = JSON.parse('{{ groups["mysql_test"] | default([]) | to_json }}');
         function sleep(milliseconds) {
         const date = Date.now();
         let currentDate = null;
