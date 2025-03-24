@@ -115,7 +115,7 @@
              for (var n = 0; n < dbHosts.length; n++) { print('\n=> ');
 
                 shell.connect({ host: dbHosts[n], user: clusterAdmin, password: password });
-                print("Connected dbHosts[n] successfully!" + "\n");
+                print("Connected" + dbHosts[n] + "successfully!" + "\n");
              
                 print("Checking instance configuration...");
                 var result = dba.checkInstanceConfiguration();
