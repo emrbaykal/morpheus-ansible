@@ -132,8 +132,9 @@
              print('\nConfiguring Instances completed.\n\n');
              sleep(5000);      
 
-              print("Setting up InnoDB Cluster on" + host + ".\n\n");
-              // shell.connect({ user: 'root', password: dbPass, host: dbHosts[0], port: 3306 });
+              print("Setting up InnoDB Cluster on " + host + ".\n\n");
+              shell.connect({ host: host, user: clusterAdmin, password: password });
+              //shell.connect({ user: 'root', password: dbPass, host: dbHosts[0], port: 3306 });
         }
 
 
