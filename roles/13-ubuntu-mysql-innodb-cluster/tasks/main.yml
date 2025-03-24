@@ -118,14 +118,10 @@
                 print("Checking instance configuration...");
                 var result = dba.checkInstanceConfiguration();
 
-                //var result = dba.checkInstanceConfiguration({host: dbHosts[n], user: clusterAdmin, password: password});
-                // print("Instance check result: " + JSON.stringify(result, null, 2));
-
                 if (result.status == "ok") {
                   print("Instance is already configured on dbHosts[n] for InnoDB Cluster usage.");
                 } else {
                   print("\nConfiguring instance...");
-                  // var config_result = dba.configureInstance({user: clusterAdmin, password: password, interactive: false, restart: true});
                   var config_result = dba.configureInstance({host: dbHosts[n], user: clusterAdmin, password: password}, {restart: true})
                   print("Instance configuration result: " + JSON.stringify(config_result, null, 2));
                 }
