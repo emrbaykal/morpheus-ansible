@@ -1,4 +1,7 @@
 ---
+- debug:
+    var: morpheus['customOptions']['ansibe_group']
+
 - name: Create Cluster Admin
   mysql_user:
     #name: "{{admin_user}}"
@@ -87,7 +90,7 @@
         var host = "{{ inventory_hostname }}";
         var clusterAdmin = "{{ morpheus['customOptions']['innodb_admin_user'] }}";
         var password = "{{ morpheus['customOptions']['innodb_admin_password'] }}";
-        var dbHosts = JSON.parse('{{ groups[{ morpheus['customOptions']['ansibe_group'] }] | default([]) | to_json }}');
+        var dbHosts = JSON.parse('{{ groups["mysql_test"] | default([]) | to_json }}');
         var clusterName = "{{ morpheus['customOptions']['innodb_cls_name'] }}";
 
         function sleep(milliseconds) {
@@ -171,24 +174,24 @@
       mode: '0600'
     no_log: true
 
-  - name: Execute MySQL Shell configuration script
-    shell: >
-       mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
-    register: mysqlsh_output
-    failed_when: mysqlsh_output.rc != 0
+  #- name: Execute MySQL Shell configuration script
+  #  shell: >
+  #     mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
+  #  register: mysqlsh_output
+  #  failed_when: mysqlsh_output.rc != 0
 
-  - name: Display MySQL Shell output
-    debug:
-      var: mysqlsh_output.stdout_lines
+  #- name: Display MySQL Shell output
+  #  debug:
+  #    var: mysqlsh_output.stdout_lines
 
-  - name: Clean up temporary files
-    file:
-      path: "{{ item }}"
-      state: absent
-    with_items:
-      - "/tmp/configure_instance.js"
-      - "/tmp/.mylogin.cnf"
-    no_log: true
+  #- name: Clean up temporary files
+  #  file:
+  #    path: "{{ item }}"
+  #    state: absent
+  #  with_items:
+  #    - "/tmp/configure_instance.js"
+  #    - "/tmp/.mylogin.cnf"
+  #  no_log: true
 
   when: morpheus['instance']['name'] == ansible_hostname
 
