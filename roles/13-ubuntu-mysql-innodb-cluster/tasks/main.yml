@@ -133,6 +133,7 @@
              sleep(5000);      
 
               print('Setting up InnoDB Cluster.\n\n');
+              print( host );
               // shell.connect({ user: 'root', password: dbPass, host: dbHosts[0], port: 3306 });
         }
 
