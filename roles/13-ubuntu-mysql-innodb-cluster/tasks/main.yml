@@ -88,7 +88,7 @@
       dest: "/tmp/configure_instance.js"
       content: |
         // MySQL Shell script to check and configure instance
-        var host = "{{ hostvars[inventory_hostname]['ansible_fqdn'] }}";
+        var host = "{{ hostvars['ansible_fqdn'] }}";
         var clusterAdmin = "{{ admin_user }}";
         var password = "{{ admin_password }}";
         var dbHosts = JSON.parse('{{ groups["mysql_test"] | default([]) | to_json }}');
