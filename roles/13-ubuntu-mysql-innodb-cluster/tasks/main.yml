@@ -65,9 +65,9 @@
   meta: flush_handlers
 
 - block:
-  #- name: Pause for 30 seconds to build InnoDB Cluster
-  #  pause:
-  #    seconds: 30
+  - name: Pause for 30 seconds to build InnoDB Cluster
+    pause:
+      seconds: 30
 
   - name: Create MySQL config file with credentials
     copy:
@@ -171,7 +171,7 @@
             setupCluster();
  
       mode: '0600'
-    #no_log: true
+    no_log: true
 
   - name: Execute MySQL Shell configuration script
     shell: >
