@@ -148,7 +148,7 @@
                  try {
                      print("Adding instance " + dbHosts[i] + " to the cluster." + "\n");
                      add_cluster = cluster.addInstance(dbHosts[i], {recoveryMethod: 'clone'});
-                     print("\nInstance " + dbHosts[i] + " successfully added to the cluster." +
+                     print("\nInstance " + dbHosts[i] + " successfully added to the cluster.");
                   } catch (e) {
                       print('\nThe Instabce could not be addet to the cluster.\n');
                       print(e + '\n');
