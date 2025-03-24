@@ -111,7 +111,7 @@
             print('\nConfiguring the instances.');
 
              for (var n = 0; n < dbHosts.length; n++) { print('\n=> ');
-              \\ dba.configureInstance('clusterAdmin@' + dbHosts[n] + ':3306', { password: dbPass, interactive: false, restart: true });
+             
 
                print("Checking instance configuration...");
                var result = dba.checkInstanceConfiguration('root@' + dbHosts[n] + ':3306', { password: password  });
