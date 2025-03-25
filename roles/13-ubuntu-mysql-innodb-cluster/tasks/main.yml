@@ -88,8 +88,9 @@
         var host = "{{ inventory_hostname }}";
         var clusterAdmin = "{{ morpheus['customOptions']['innodb_admin_user'] }}";
         var password = "{{ morpheus['customOptions']['innodb_admin_password'] }}";
-        var dbHostsJson = {{ groups[morpheus['customOptions']['ansibe_group']] | default([]) | to_json }};
-        var dbHosts = dbHostsJson;     
+        //var dbHostsJson = {{ groups[morpheus['customOptions']['ansibe_group']] | default([]) | to_json }};
+        //var dbHosts = dbHostsJson;
+        var dbHosts = JSON.parse('{{ groups["mysql_test"] | default([]) | to_json }}');     
         var clusterName = "{{ morpheus['customOptions']['innodb_cls_name'] }}";
 
         function sleep(milliseconds) {
