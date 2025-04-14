@@ -9,16 +9,9 @@
   tasks:
      - name: Print hostname
        debug:
-         msg: "{{ groups['mysql_test'] | default([]) }}"
+         msg: "{{  morpheus['instance']['layoutName'] }}"
 
-     - name: Debug inventory information
-       debug:
-         msg: 
-          - "Current inventory_hostname: {{ inventory_hostname }}"
-          - "ansible_fqdn: {{ ansible_fqdn }}"
-          - "Instance Name: {{ morpheus['instance']['name'] }}"
-          - "Host Name: {{ ansible_hostname }}"
-       when: morpheus['instance']['name'] == ansible_hostname
+    
 
 
 
