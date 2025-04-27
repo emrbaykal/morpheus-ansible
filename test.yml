@@ -4,7 +4,7 @@
   become: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    ansible_user: hpe
+    ansible_user: ansible
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   tasks:
      - name: Print hostname
