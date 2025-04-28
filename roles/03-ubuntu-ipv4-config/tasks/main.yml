@@ -14,6 +14,9 @@
       br_netfilter
   notify: load-br_netfilter-module
 
+- name: Flush handlers
+  meta: flush_handlers
+
 - name: Apply sysctl parameters from /etc/sysctl.conf
   command: sysctl -p /etc/sysctl.conf
 
