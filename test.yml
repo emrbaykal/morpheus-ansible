@@ -25,7 +25,7 @@
 
      - name: Hostname
        debug:
-          msg: "{{ hostname_output }}"
+          var: hostname_output.stdout
        when: ansible_facts['hostname'] == morpheus['instance']['name']
 
   
