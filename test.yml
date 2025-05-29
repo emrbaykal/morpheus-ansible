@@ -19,6 +19,9 @@
        #when: ansible_facts['hostname'] == 'test'
        when: ansible_facts['hostname'] != morpheus['instance']['name']
       
+     - name: get join command to the master server
+       shell: hostname
+       register: join_command_raw
 
     
 
