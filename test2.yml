@@ -15,11 +15,13 @@
          mode: '0644'
          owner: root
          group: root
+       #delegate_to: "{{ morpheus['instance']['name'] }}"
+       #when: ansible_facts['hostname'] == 'test'
        when: ansible_facts['hostname'] == morpheus['instance']['name']
       
      - name: get join command to the master server
        shell: hostname
-       register: hostname_output
+       register: join_command_raw
        when: ansible_facts['hostname'] == morpheus['instance']['name']
     
 
