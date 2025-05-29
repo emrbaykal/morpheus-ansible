@@ -6,8 +6,8 @@
 - name: Apply Operating System Upgrade Patches
   apt:
     upgrade: dist
-    update_cache: yes
-    cache_valid_time: 3600
+   # update_cache: yes
+   # cache_valid_time: 3600
 
 - name: Check if a reboot is needed
   register: reboot_required_file
