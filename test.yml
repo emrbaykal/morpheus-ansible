@@ -16,7 +16,7 @@
          owner: root
          group: root
        #when: ansible_facts['hostname'] == 'test'
-       when: ansible_facts['hostname'] != "morpheus['instance']['name']"
+       when: ansible_facts['hostname'] != {{ morpheus['instance']['name'] }}
        # delegate_to: "{{ morpheus['customOptions']['k8_master_fqdn'] }}"
 
     
