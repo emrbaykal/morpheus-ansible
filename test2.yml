@@ -10,7 +10,7 @@
   tasks:
      - name: get task1 result
        debug:
-          msg: "{{ morpheus['results'] }}"
+          msg: "{{ morpheus['results']['test1'] }}"
       # when: ansible_facts['hostname'] != morpheus['instance']['name']
     
 
