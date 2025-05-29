@@ -17,7 +17,7 @@
          group: root
        when: ansible_facts['hostname'] == morpheus['instance']['name']
       
-     - name: get join command to the master server
+     - name: Hostname info
        shell: hostname
        register: hostname_output
        when: ansible_facts['hostname'] == morpheus['instance']['name']

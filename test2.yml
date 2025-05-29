@@ -8,9 +8,9 @@
     #ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
     #ansible_become_password: "{{ lookup('cypher','secret=password/ansible') }}"
   tasks:
-     - name: get another task result
+     - name: get task1 result
        debug:
-          msg: "{{ morpheus['results']['test1'] }}"
+          msg: "{{ morpheus['results']['test1']['hostname_output'] }}"
        when: ansible_facts['hostname'] != morpheus['instance']['name']
     
 
