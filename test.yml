@@ -23,6 +23,9 @@
        when: ansible_facts['hostname'] == morpheus['instance']['name']
     
 
-
+     - name: Hostname
+       debug:
+          msg: "{{ hostname_output }}"
+       when: ansible_facts['hostname'] == morpheus['instance']['name']
 
   
