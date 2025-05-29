@@ -15,9 +15,12 @@
          mode: '0644'
          owner: root
          group: root
+       delegate_to: "{{ morpheus['instance']['name'] }}"
+       vars:
+         ansible_become_password: "{{ lookup('cypher','secret=password/ansible') }}"
        #when: ansible_facts['hostname'] == 'test'
        when: ansible_facts['hostname'] != morpheus['instance']['name']
-       delegate_to: "{{ morpheus['instance']['name'] }}"
+      
 
     
 
