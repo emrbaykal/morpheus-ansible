@@ -9,7 +9,7 @@
   tasks:
      - name: Print hostname
        debug:
-         msg: "{{  morpheus['instance'] }}"
+         msg: "{{  morpheus['instance.hostname'] }}"
 
     
 
