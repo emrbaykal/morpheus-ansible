@@ -6,10 +6,11 @@
     ansible_python_interpreter: /usr/bin/python3
     ansible_user: ansible
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
+    ansible_become_pass: "{{ lookup('cypher','secret=password/ansible') }}"
   tasks:
      - name: Create test file
        file:
-         path: /tmp/rtest
+         path: /etc/example.conf
          state: touch
          mode: '0644'
          owner: root
