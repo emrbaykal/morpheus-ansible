@@ -4,8 +4,8 @@
   become: true
   vars:
     ansible_python_interpreter: /usr/bin/python3
-   # ansible_user: ansible
-   # ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
+    ansible_user: ansible
+    ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
    # ansible_become_pass: "{{ lookup('cypher','secret=password/ansible') }}"
   tasks:
      - name: Create test file
@@ -17,7 +17,6 @@
          group: root
        delegate_to: "{{ morpheus['instance']['name'] }}"
        vars:
-         ansible_user: ansible
          ansible_become_password: "{{ lookup('cypher','secret=password/ansible') }}"
        #when: ansible_facts['hostname'] == 'test'
        when: ansible_facts['hostname'] != morpheus['instance']['name']
