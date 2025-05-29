@@ -11,7 +11,7 @@
      - name: get join command to the master server
        debug:
           msg: "{{ morpheus['task']['results']['test1'] }}"
-       when: ansible_facts['hostname'] =! morpheus['instance']['name']
+       when: ansible_facts['hostname'] != morpheus['instance']['name']
     
 
 
