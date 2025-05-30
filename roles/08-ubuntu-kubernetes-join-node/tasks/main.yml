@@ -8,15 +8,16 @@
 - name: Join and label ESXI kubernetes node block
   block:
   
-   - name: get join command to the master server
-     shell: kubeadm token create --print-join-command
-     delegate_to: "{{ morpheus['customOptions']['k8_master_fqdn'] }}"
-     vars:
-        ansible_become_password: "{{ lookup('cypher','secret=password/ansible-user') }}"
-     register: join_command_raw
+  # - name: get join command to the master server
+  #   shell: kubeadm token create --print-join-command
+  #   delegate_to: "{{ morpheus['customOptions']['k8_master_fqdn'] }}"
+  #   vars:
+  #      ansible_become_password: "{{ lookup('cypher','secret=password/ansible-user') }}"
+  #   register: join_command_raw
 
    - name: join kubernetes cluster
-     shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+  #   shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
+     shell: "{{ morpheus['results']['k8getjoin'] }} --ignore-preflight-errors all"
      register: join_result
 
    - name: Kubernetes Cluster Node Join Result
