@@ -17,7 +17,7 @@
 
    - name: join kubernetes cluster
   #   shell: "{{ join_command_raw.stdout_lines[0] }} --ignore-preflight-errors all"
-     shell: "{{ morpheus['results']['k8getjoin'] }} --ignore-preflight-errors all"
+     shell: "{{ morpheus['results']['k8getjoin'] | regex_replace('\n', '') }} --ignore-preflight-errors all"
      register: join_result
 
    - name: Kubernetes Cluster Node Join Result
