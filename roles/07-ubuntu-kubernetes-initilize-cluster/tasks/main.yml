@@ -40,12 +40,15 @@
         dest: "{{ ansible_env.HOME }}/.kube/config"
         owner: "{{ lookup('pipe','id -u') | int }}"
         group: "{{ lookup('pipe','id -g') | int }}"
+
+    - name: Wait for 3 minutes before proceeding configure Flannel
+      pause:
+        prompt: "Wait for 3 minutes before proceeding configure Flannel !!"
+        minutes: 3
+
   when: not adminconf_check.stat.exists
 
-- name: Wait for 3 minutes before proceeding configure Flannel
-  pause:
-    prompt: "Wait for 3 minutes before proceeding configure Flannel !!"
-    minutes: 3
+
 
 - name: Get node status
   kubernetes.core.k8s_info:
