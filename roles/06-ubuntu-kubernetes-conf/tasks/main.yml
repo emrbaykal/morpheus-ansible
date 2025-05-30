@@ -1,5 +1,5 @@
 ---
-- name: Update apt package index
+- name: Update apt package index for K8
   apt:
     update_cache: yes
 
