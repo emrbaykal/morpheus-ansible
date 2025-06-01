@@ -25,4 +25,8 @@
          tags:
            - role::mysql::inodb-cluster
 
+       - role: 14-ubuntu-mysql-create-innodb-cluster
+         tags:
+           - role::mysql::inodb-cluster
 
+        
