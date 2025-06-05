@@ -1,7 +1,7 @@
 
-  - name: Pause for 30 seconds to build InnoDB Cluster
-    pause:
-      seconds: 30
+  #- name: Pause for 30 seconds to build InnoDB Cluster
+  #  pause:
+  #    seconds: 30
 
   - name: Create MySQL config file with credentials
     copy:
