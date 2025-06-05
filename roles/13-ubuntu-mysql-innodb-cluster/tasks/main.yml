@@ -59,7 +59,7 @@
     group: root
     mode: '0644'
   notify:
-    - Restart mysql
+    - Restart mysql_db
 
 - name: Flush handlers
   meta: flush_handlers
