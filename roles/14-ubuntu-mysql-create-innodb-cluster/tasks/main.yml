@@ -14,6 +14,7 @@
        mode: '0600'
     no_log: true
 
+
   - name: Create MySQL Shell script for instance configuration
     copy:
       dest: "/tmp/configure_instance.js"
@@ -23,7 +24,7 @@
         var clusterAdmin = "{{ morpheus['customOptions']['innodb_admin_user'] }}";
         var password = "{{ morpheus['customOptions']['innodb_admin_password'] }}";
         // var dbHosts = JSON.parse('{{ groups["mysqlclsinnodbgrp"] | default([]) | to_json }}'); 
-        var dbHosts = JSON.parse('{{ morpheus["instance"]["configGroup"] | default([]) | to_json }}');    
+        var dbHosts = JSON.parse('{{ groups[morpheus["instance"]["configGroup"]] | default([]) | to_json }}');    
         var clusterName = "{{ morpheus['customOptions']['innodb_cls_name'] }}";
 
         function sleep(milliseconds) {
