@@ -24,10 +24,12 @@
        - role: 13-ubuntu-mysql-innodb-cluster
          tags:
            - role::mysql::inodb-cluster
+           - role::mysql::innodb-cluster::pre-configure
 
        - role: 14-ubuntu-mysql-create-innodb-cluster
          when: ansible_facts['hostname'] == morpheus['instance']['name']
          tags:
            - role::mysql::inodb-cluster
+           - role::mysql::innodb-cluster::post-configure
 
         
