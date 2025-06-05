@@ -23,7 +23,6 @@
         var host = "{{ inventory_hostname }}";
         var clusterAdmin = "{{ morpheus['customOptions']['innodb_admin_user'] }}";
         var password = "{{ morpheus['customOptions']['innodb_admin_password'] }}";
-        // var dbHosts = JSON.parse('{{ groups["mysqlclsinnodbgrp"] | default([]) | to_json }}'); 
         var dbHosts = JSON.parse('{{ groups[morpheus["instance"]["configGroup"]] | default([]) | to_json }}');    
         var clusterName = "{{ morpheus['customOptions']['innodb_cls_name'] }}";
 
@@ -108,15 +107,15 @@
       mode: '0600'
    # no_log: true
 
-  #- name: Execute MySQL Shell configuration script
-  #  shell: >
-  #     mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
-  #  register: mysqlsh_output
-  #  failed_when: mysqlsh_output.rc != 0
+  - name: Execute MySQL Shell configuration script
+    shell: >
+       mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
+    register: mysqlsh_output
+    failed_when: mysqlsh_output.rc != 0
 
-  #- name: Display MySQL Shell output
-  #  debug:
-  #    var: mysqlsh_output.stdout_lines
+  - name: Display MySQL Shell output
+    debug:
+      var: mysqlsh_output.stdout_lines
 
   #- name: Clean up temporary files
   #  file:
