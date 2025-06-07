@@ -8,15 +8,16 @@
     mode: '0644'
 
 - name: Update minio.service file with the required changes
-  lineinfile:
-    path: /tmp/minio.service.j2
+  replace:
+    path: /usr/lib/systemd/system/minio.service
     regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
+    replace: "{{ item.replace }}"
+    backup: true
   with_items:
-    - { regexp: '^WorkingDirectory=/usr/local$', line: 'WorkingDirectory=/opt/minio' }
-    - { regexp: '^User=minio-user$', line: 'User=minio' }
-    - { regexp: '^Group=minio-user$', line: 'Group=minio' }
-    - { regexp: '^EnvironmentFile=-/etc/default/minio$', line: 'EnvironmentFile=/etc/default/minio' }
+    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
+    - { regexp: '^User=minio-user$', replace: 'User=minio' }
+    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
+    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
   notify: minio-service
 
 - name: Flush handlers
