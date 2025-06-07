@@ -1,0 +1,31 @@
+---
+
+- name: Find available disks
+  shell: lsblk -nd -o NAME | grep -v "sda\|vda\|xvda\|sr0" | awk '{print "/dev/"$1}'
+  register: available_disks
+  changed_when: false
+
+- name: Display found disks
+  debug:
+    var: available_disks.stdout_lines
+
+- name: Format drives with XFS filesystem
+  filesystem:
+    fstype: xfs
+    dev: "{{ item }}"
+    opts: "-L MINIODRIVE{{ index }}"
+  loop: "{{ available_disks.stdout_lines }}"
+  loop_control:
+    index_var: index
+  when: available_disks.stdout_lines | length > 0
+
+- name: Create mount point directories
+  file:
+    path: "/opt/minio/miniodrive{{ index }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ available_disks.stdout_lines }}"
+  loop_control:
+    index_var: index
+  when: available_disks.stdout_lines | length > 0
+
