@@ -1,0 +1,112 @@
+---
+
+- name: Find available disks
+  shell: lsblk -nd -o NAME | grep -v "sda\|vda\|xvda\|sr0" | awk '{print "/dev/"$1}'
+  register: available_disks
+  changed_when: false
+
+- name: Display found disks
+  debug:
+    var: available_disks.stdout_lines
+
+- name: Format drives with XFS filesystem
+  filesystem:
+    fstype: xfs
+    dev: "{{ item }}"
+    opts: "-L MINIODRIVE{{ index }}"
+  loop: "{{ available_disks.stdout_lines }}"
+  loop_control:
+    index_var: index
+  when: available_disks.stdout_lines | length > 0
+
+- name: Create mount point directories
+  file:
+    path: "/opt/minio/miniodrive{{ index }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ available_disks.stdout_lines }}"
+  loop_control:
+    index_var: index
+  when: available_disks.stdout_lines | length > 0
+
+- name: Mount drives
+  mount:
+    path: "/opt/minio/miniodrive{{ index }}"
+    src: "{{ item }}"
+    fstype: xfs
+    opts: defaults,noatime
+    passno: 2
+    state: mounted
+  loop: "{{ available_disks.stdout_lines }}"
+  loop_control:
+    index_var: index
+  when: available_disks.stdout_lines | length > 0
+
+- name: Create script to disable XFS metadata operation retries
+  copy:
+    dest: /opt/minio/disable-xfs-retry-on-error.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+
+      for dev in $(df -h | grep /opt/minio | awk '{ print $1 }'); do
+            mountPath="$(df -h | grep $dev | awk '{ print $6 }')"
+            deviceName="$(basename $dev)"
+            echo "Modifying xfs max_retries and retry_timeout_seconds for drive $dev mounted at $mountPath"
+            echo 0 > /sys/fs/xfs/$deviceName/error/metadata/EIO/max_retries
+            echo 0 > /sys/fs/xfs/$deviceName/error/metadata/ENOSPC/max_retries
+            echo 0 > /sys/fs/xfs/$deviceName/error/metadata/default/max_retries
+      done
+      exit 0
+
+- name: Run the XFS retry script
+  command: /opt/minio/disable-xfs-retry-on-error.sh
+  register: xfs_script_result
+
+- name: Display XFS script output
+  debug:
+    var: xfs_script_result.stdout_lines
+
+- name: Schedule script to run on reboot via crontab
+  cron:
+    name: "Run XFS retry script on reboot"
+    special_time: reboot
+    job: "/opt/minio/disable-xfs-retry-on-error.sh"
+    user: root
+
+- name: Create MinIO User
+  user:
+    name: minio
+    system: yes
+    create_home: no
+    shell: /sbin/nologin
+
+- name: Create MinIO configs directory
+  file:
+    path: /etc/minio
+    state: directory
+    mode: '0755'
+
+- name: Update MinIO data directories ownership
+  file:
+    path: "{{ item }}"
+    owner: minio
+    group: minio
+    recurse: yes
+  loop:
+    - /opt/minio
+    - /etc/minio
+
+- name: Install MinIO on Ubuntu
+  apt:
+    deb: https://dl.min.io/server/minio/release/linux-amd64/minio_20250524170830.0.0_amd64.deb
+
+- name: Check MinIO version
+  command: minio --version
+  register: minio_version
+  changed_when: false
+
+- name: Display MinIO version
+  debug:
+    var: minio_version.stdout
+

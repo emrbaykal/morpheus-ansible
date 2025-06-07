@@ -22,6 +22,10 @@
            - role::os-preconfigure
            - role::os-preconfigure::minio-requirements
 
+       - role: 16-ubuntu-minio-conf
+         tags:
+           - role::minio-conf
+
        
 
         
