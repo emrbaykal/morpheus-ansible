@@ -19,7 +19,8 @@
 
        - role: 15-ubuntu-minio-post-provision
          tags:
-           - role::mysql::install-mysql
+           - role::os-preconfigure
+           - role::os-preconfigure::minio-requirements
 
        
 
