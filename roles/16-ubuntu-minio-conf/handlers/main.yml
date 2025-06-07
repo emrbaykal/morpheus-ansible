@@ -1,1 +1,7 @@
 ---
+- name: minio-service
+  service:
+    name: minio
+    daemon_reload: true
+    enabled: true
+    state: reloaded

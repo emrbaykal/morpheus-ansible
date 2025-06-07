@@ -1,0 +1,17 @@
+# MINIO_ROOT_USER and MINIO_ROOT_PASSWORD sets the root account for the MinIO server.
+# This user has unrestricted permissions to perform S3 and administrative API operations on any resource in the deployment.
+# Omit to use the default values 'minioadmin:minioadmin'.
+# MinIO recommends setting non-default values as a best practice, regardless of environment.
+
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minIO-s3c-change-me
+
+# MINIO_VOLUMES sets the storage volumes or paths to use for the MinIO server.
+# The specified path uses MinIO expansion notation to denote a sequential series of drives between 1 and 4, inclusive.
+# All drives or paths included in the expanded drive list must exist *and* be empty or freshly formatted for MinIO to start successfully.
+
+MINIO_VOLUMES="/opt/minio/miniodrive{0...3}"
+
+# MINIO_OPTS sets any additional commandline options to pass to the MinIO server.
+# For example, `--console-address :9001` sets the MinIO Console listen port
+MINIO_OPTS="--address :9000 --console-address :9001"
