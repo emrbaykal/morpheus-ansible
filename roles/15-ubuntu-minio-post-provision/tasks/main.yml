@@ -73,3 +73,40 @@
     special_time: reboot
     job: "/opt/minio/disable-xfs-retry-on-error.sh"
     user: root
+
+- name: Create MinIO User
+  user:
+    name: minio
+    system: yes
+    create_home: no
+    shell: /sbin/nologin
+
+- name: Create MinIO configs directory
+  file:
+    path: /etc/minio
+    state: directory
+    mode: '0755'
+
+- name: Update MinIO data directories ownership
+  file:
+    path: "{{ item }}"
+    owner: minio
+    group: minio
+    recurse: yes
+  loop:
+    - /opt/minio
+    - /etc/minio
+
+- name: Install MinIO on Ubuntu
+  apt:
+    deb: https://dl.min.io/server/minio/release/linux-amd64/minio_20250524170830.0.0_amd64.deb
+
+- name: Check MinIO version
+  command: minio --version
+  register: minio_version
+  changed_when: false
+
+- name: Display MinIO version
+  debug:
+    var: minio_version.stdout
+
