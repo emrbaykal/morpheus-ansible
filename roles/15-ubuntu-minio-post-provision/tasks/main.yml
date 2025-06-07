@@ -41,3 +41,30 @@
   loop_control:
     index_var: index
   when: available_disks.stdout_lines | length > 0
+
+- name: Create script to disable XFS metadata operation retries
+  copy:
+    dest: /opt/minio/disable-xfs-retry-on-error.sh
+    mode: '0755'
+    content: |
+      #!/bin/bash
+
+      for dev in $(df -h | grep /opt/minio | awk '{ print $1 }'); do
+            mountPath="$(df -h | grep $dev | awk '{ print $6 }')"
+            deviceName="$(basename $dev)"
+            echo "Modifying xfs max_retries and retry_timeout_seconds for drive $dev mounted at $mountPath"
+            echo 0 > /sys/fs/xfs/$deviceName/error/metadata/EIO/max_retries
+            echo 0 > /sys/fs/xfs/$deviceName/error/metadata/ENOSPC/max_retries
+            echo 0 > /sys/fs/xfs/$deviceName/error/metadata/default/max_retries
+      done
+      exit 0
+
+- name: Run the XFS retry script
+  command: /opt/minio/disable-xfs-retry-on-error.sh
+
+- name: Schedule script to run on reboot via crontab
+  cron:
+    name: "Run XFS retry script on reboot"
+    special_time: reboot
+    job: "/opt/minio/disable-xfs-retry-on-error.sh"
+    user: root
