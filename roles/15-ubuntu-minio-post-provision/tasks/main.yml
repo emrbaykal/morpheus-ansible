@@ -61,6 +61,11 @@
 
 - name: Run the XFS retry script
   command: /opt/minio/disable-xfs-retry-on-error.sh
+  register: xfs_script_result
+
+- name: Display XFS script output
+  debug:
+    var: xfs_script_result.stdout_lines
 
 - name: Schedule script to run on reboot via crontab
   cron:
