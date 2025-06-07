@@ -35,6 +35,7 @@
     src: "{{ item }}"
     fstype: xfs
     opts: defaults,noatime
+    passno: 2
     state: mounted
   loop: "{{ available_disks.stdout_lines }}"
   loop_control:
