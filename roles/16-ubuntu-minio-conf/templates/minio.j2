@@ -3,7 +3,7 @@
 # Omit to use the default values 'minioadmin:minioadmin'.
 # MinIO recommends setting non-default values as a best practice, regardless of environment.
 
-MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_USER="{{ morpheus['customOptions']['minio_root_user'] }}"
 MINIO_ROOT_PASSWORD=minIO-s3c-change-me
 
 # MINIO_VOLUMES sets the storage volumes or paths to use for the MinIO server.
