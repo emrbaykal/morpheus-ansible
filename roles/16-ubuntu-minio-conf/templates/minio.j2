@@ -14,4 +14,4 @@ MINIO_VOLUMES="/opt/minio/miniodrive{0...{{ minio_disks.stdout_lines | length - 
 
 # MINIO_OPTS sets any additional commandline options to pass to the MinIO server.
 # For example, `--console-address :9001` sets the MinIO Console listen port
-MINIO_OPTS="--address :9000 --console-address :9001"
+MINIO_OPTS="--address :{{ morpheus['customOptions']['minio_s3_api_port'] }} --console-address :{{ morpheus['customOptions']['minio_console_port'] }}"
