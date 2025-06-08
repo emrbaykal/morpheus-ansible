@@ -1,6 +1,6 @@
 ---
 - name: Number of Minio Disks
-  shell: lsblk -nd -o NAME | grep -v "sda\|vda\|xvda\|sr0" | awk '{print "/dev/"$1}' | wc -l
+  shell: lsblk -nd -o NAME | grep -v "sda\|vda\|xvda\|sr0" | awk '{print "/dev/"$1}' 
   register: minio_disks
   changed_when: false
 

@@ -10,7 +10,7 @@ MINIO_ROOT_PASSWORD=minIO-s3c-change-me
 # The specified path uses MinIO expansion notation to denote a sequential series of drives between 1 and 4, inclusive.
 # All drives or paths included in the expanded drive list must exist *and* be empty or freshly formatted for MinIO to start successfully.
 
-MINIO_VOLUMES="/opt/minio/miniodrive{0...{{ minio_disks.stdout_lines }}}"
+MINIO_VOLUMES="/opt/minio/miniodrive{0...{{ minio_disks.stdout_lines | length - 1 }}}"
 
 # MINIO_OPTS sets any additional commandline options to pass to the MinIO server.
 # For example, `--console-address :9001` sets the MinIO Console listen port
