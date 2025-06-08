@@ -12,39 +12,39 @@
     group: root
     mode: '0644'
 
-#- name: Update minio.service file with the required changes
-#  replace:
-#    path: /usr/lib/systemd/system/minio.service
-#    regexp: "{{ item.regexp }}"
-#    replace: "{{ item.replace }}"
-#    backup: true
-#  with_items:
-#    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
-#    - { regexp: '^User=minio-user$', replace: 'User=minio' }
-#    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
-#    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
-#  notify: minio-service
+- name: Update minio.service file with the required changes
+  replace:
+    path: /usr/lib/systemd/system/minio.service
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+    backup: true
+  with_items:
+    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
+    - { regexp: '^User=minio-user$', replace: 'User=minio' }
+    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
+    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
+  notify: minio-service
 
-#- name: Flush handlers
-#  meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
-#- name: Check MinIO service status
-#  command: systemctl status minio
-#  register: minio_status
-#  changed_when: false
-#  failed_when: false
+- name: Check MinIO service status
+  command: systemctl status minio
+  register: minio_status
+  changed_when: false
+  failed_when: false
 
-#- name: Display MinIO service status
-#  debug:
-#    var: minio_status.stdout_lines
+- name: Display MinIO service status
+  debug:
+    var: minio_status.stdout_lines
 
-#- name: Check listening ports
-#  shell: ss -tuln | grep -E ':9000|:9001'
-#  register: port_check
-#  changed_when: false
-#  failed_when: false
+- name: Check listening ports
+  shell: ss -tuln | grep -E ':9000|:9001'
+  register: port_check
+  changed_when: false
+  failed_when: false
 
-#- name: Display listening ports
-#  debug:
-#    var: port_check.stdout_lines
+- name: Display listening ports
+  debug:
+    var: port_check.stdout_lines
 
