@@ -2,7 +2,7 @@
 # This user has unrestricted permissions to perform S3 and administrative API operations on any resource in the deployment.
 # Omit to use the default values 'minioadmin:minioadmin'.
 # MinIO recommends setting non-default values as a best practice, regardless of environment.
-{{ morpheus['customOptions']['pod_cidr'] }}
+
 MINIO_ROOT_USER={{ morpheus['customOptions']['minio_root_user'] }}
 MINIO_ROOT_PASSWORD={{ morpheus['customOptions']['minio_root_password'] }}
 
