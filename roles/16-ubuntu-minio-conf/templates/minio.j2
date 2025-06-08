@@ -3,8 +3,8 @@
 # Omit to use the default values 'minioadmin:minioadmin'.
 # MinIO recommends setting non-default values as a best practice, regardless of environment.
 
-MINIO_ROOT_USER={{ morpheus['customOptions']['minio_root_user'] }}
-MINIO_ROOT_PASSWORD={{ morpheus['customOptions']['minio_root_password'] }}
+MINIO_ROOT_USER="{{ morpheus['customOptions']['minio_root_user'] }}"
+MINIO_ROOT_PASSWORD="{{ morpheus['customOptions']['minio_root_password'] }}"
 
 # MINIO_VOLUMES sets the storage volumes or paths to use for the MinIO server.
 # The specified path uses MinIO expansion notation to denote a sequential series of drives between 1 and 4, inclusive.
