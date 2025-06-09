@@ -99,7 +99,7 @@
 
 - name: Install MinIO on Ubuntu
   apt:
-    deb: https://dl.min.io/server/minio/release/linux-amd64/minio_20250524170830.0.0_amd64.deb
+    deb: https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20250524170830.0.0_amd64.deb
 
 - name: Check MinIO version
   command: minio --version
