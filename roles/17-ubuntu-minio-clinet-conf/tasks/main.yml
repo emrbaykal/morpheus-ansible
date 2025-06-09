@@ -1,0 +1,47 @@
+---
+- name: Install MinIO Client on Ubuntu
+  apt:
+    deb: https://dl.min.io/client/mc/release/linux-amd64/archive/mcli_20250521015954.0.0_amd64.deb
+
+
+- name: Check MinIO Client version
+  command: mcli --version
+  register: mcli_version
+  changed_when: false
+
+- name: Display MinIO Client version
+  debug:
+    var: mcli_version.stdout_lines
+
+- name: Set MinIO alias
+  shell: >
+    mcli alias set minios3 http://localhost:9000 {{ morpheus['customOptions']['minio_root_user'] }} {{ morpheus['customOptions']['minio_root_password'] }}
+  args:
+    executable: /bin/bash
+  register: mcli_alias_output
+  changed_when: false
+  failed_when: false
+
+- name: Display MinIO alias output
+  debug:
+    var: mcli_alias_output.stdout_lines
+    verbosity: 0
+
+- name: List MinIO aliases
+  command: mcli alias ls
+  register: mcli_alias_list
+  changed_when: false
+
+- name: Display MinIO aliases
+  debug:
+    var: mcli_alias_list.stdout_lines
+
+- name: List MinIO buckets
+  command: mcli ls minios3
+  register: mcli_ls_output
+  changed_when: false
+  failed_when: false
+
+- name: Display bucket list
+  debug:
+    var: mcli_ls_output.stdout_lines
