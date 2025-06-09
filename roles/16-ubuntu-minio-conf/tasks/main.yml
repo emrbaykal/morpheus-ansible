@@ -1,4 +1,41 @@
 ---
+
+- name: Create MinIO User
+  user:
+    name: minio
+    system: yes
+    create_home: no
+    shell: /sbin/nologin
+
+- name: Create MinIO configs directory
+  file:
+    path: /etc/minio
+    state: directory
+    mode: '0755'
+
+- name: Update MinIO data directories ownership
+  file:
+    path: "{{ item }}"
+    owner: minio
+    group: minio
+    recurse: yes
+  loop:
+    - /opt/minio
+    - /etc/minio
+
+- name: Install MinIO on Ubuntu
+  apt:
+    deb: https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20250524170830.0.0_amd64.deb
+
+- name: Check MinIO version
+  command: minio --version
+  register: minio_version
+  changed_when: false
+
+- name: Display MinIO version
+  debug:
+    var: minio_version.stdout
+
 - name: Number of Minio Disks
   shell: lsblk -nd -o NAME | grep -v "sda\|vda\|xvda\|sr0" | awk '{print "/dev/"$1}' 
   register: minio_disks
@@ -12,21 +49,29 @@
     group: root
     mode: '0644'
 
-- name: Update minio.service file with the required changes
-  replace:
-    path: /usr/lib/systemd/system/minio.service
-    regexp: "{{ item.regexp }}"
-    replace: "{{ item.replace }}"
-    backup: true
-  with_items:
-    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
-    - { regexp: '^User=minio-user$', replace: 'User=minio' }
-    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
-    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
-  notify: minio-service
+#- name: Update minio.service file with the required changes
+#  replace:
+#    path: /usr/lib/systemd/system/minio.service
+#    regexp: "{{ item.regexp }}"
+#    replace: "{{ item.replace }}"
+#    backup: true
+#  with_items:
+#    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
+#    - { regexp: '^User=minio-user$', replace: 'User=minio' }
+#    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
+#    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
+#  notify: minio-service
 
-- name: Flush handlers
-  meta: flush_handlers
+#- name: Flush handlers
+#  meta: flush_handlers
+
+# temporary
+- name: minio-service
+  service:
+    name: minio
+    daemon_reload: true
+    enabled: true
+    state: restarted
 
 - name: Check MinIO service status
   command: systemctl status minio
