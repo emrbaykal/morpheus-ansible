@@ -49,29 +49,23 @@
     group: root
     mode: '0644'
 
-#- name: Update minio.service file with the required changes
-#  replace:
-#    path: /usr/lib/systemd/system/minio.service
-#    regexp: "{{ item.regexp }}"
-#    replace: "{{ item.replace }}"
-#    backup: true
-#  with_items:
-#    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
-#    - { regexp: '^User=minio-user$', replace: 'User=minio' }
-#    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
-#    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
-#  notify: minio-service
+- name: Update minio.service file with the required changes
+  replace:
+    path: /usr/lib/systemd/system/minio.service
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+    backup: true
+  with_items:
+    - { regexp: '^WorkingDirectory=/usr/local$', replace: 'WorkingDirectory=/opt/minio' }
+    - { regexp: '^User=minio-user$', replace: 'User=minio' }
+    - { regexp: '^Group=minio-user$', replace: 'Group=minio' }
+    - { regexp: '^EnvironmentFile=-/etc/default/minio$', replace: 'EnvironmentFile=/etc/default/minio' }
+  notify: minio-service
 
-#- name: Flush handlers
-#  meta: flush_handlers
+- name: Flush handlers
+  meta: flush_handlers
 
-# temporary
-- name: minio-service
-  service:
-    name: minio
-    daemon_reload: true
-    enabled: true
-    state: restarted
+
 
 - name: Check MinIO service status
   command: systemctl status minio
