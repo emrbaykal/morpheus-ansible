@@ -26,6 +26,10 @@
          tags:
            - role::minio-conf
 
+       - role: 17-ubuntu-minio-clinet-conf
+         tags:
+           - role::minio-client-conf
+
        
 
         
