@@ -12,4 +12,7 @@
          tags:
            - role::k8-master-node::nfs-storage-class 
 
-  
+       - role: 18-ubuntu-kubernetes-s3-storage-class
+         when: ansible_facts['hostname'] == morpheus['instance']['name']
+         tags:
+           - role::k8-master-node::s3-storage-class  
