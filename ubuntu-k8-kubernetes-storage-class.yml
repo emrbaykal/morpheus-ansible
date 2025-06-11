@@ -7,9 +7,9 @@
     ansible_user: ansible
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   roles:
-       - role: 11-ubuntu-kubernetes-storage-class
+       - role: 11-ubuntu-kubernetes-nfs-storage-class
          when: ansible_facts['hostname'] == morpheus['instance']['name']
          tags:
-           - role::k8-master-node::storage-class 
+           - role::k8-master-node::nfs-storage-class 
 
   
