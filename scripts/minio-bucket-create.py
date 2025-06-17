@@ -5,6 +5,7 @@ import os
 
 # SSH connection details
 minio_server = morpheus['server']['hostname']
+#minio_server = morpheus['customOptions']['minio_server']
 bucked_name = morpheus['customOptions']['bucked_name']
 bucked_accesskey =  morpheus['customOptions']['bucked_accesskey']
 bucked_secretkey = morpheus['customOptions']['bucked_secretkey']
