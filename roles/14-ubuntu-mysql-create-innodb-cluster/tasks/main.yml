@@ -107,23 +107,23 @@
       mode: '0600'
    # no_log: true
 
-  - name: Execute MySQL Shell configuration script
-    shell: >
-       mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
-    register: mysqlsh_output
-    failed_when: mysqlsh_output.rc != 0
+  #- name: Execute MySQL Shell configuration script
+  #  shell: >
+  #     mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
+  #  register: mysqlsh_output
+  #  failed_when: mysqlsh_output.rc != 0
 
-  - name: Display MySQL Shell output
-    debug:
-      var: mysqlsh_output.stdout_lines
+  #- name: Display MySQL Shell output
+  #  debug:
+  #    var: mysqlsh_output.stdout_lines
 
-  - name: Clean up temporary files
-    file:
-      path: "{{ item }}"
-      state: absent
-    with_items:
-      - "/tmp/configure_instance.js"
-      - "/tmp/.mylogin.cnf"
-    no_log: true
+  #- name: Clean up temporary files
+  #  file:
+  #    path: "{{ item }}"
+  #    state: absent
+  #  with_items:
+  #    - "/tmp/configure_instance.js"
+  #    - "/tmp/.mylogin.cnf"
+  #  no_log: true
 
 
