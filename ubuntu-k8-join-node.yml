@@ -11,7 +11,9 @@
          when: ansible_facts['hostname'] != morpheus['instance']['name']
          tags:
            - role::k8-worker-node::kubernetes-join-node
-
+       - role: 08-ubuntu-kubernetes-join-node
+         tags:
+           - role::k8-worker-node::kubernetes-join-node-operational
 
 
   
