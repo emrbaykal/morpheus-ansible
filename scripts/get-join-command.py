@@ -1,5 +1,6 @@
 import paramiko
 import sys
+import time
 
 # SSH connection details
 hostname = morpheus['instance']['name']
@@ -12,9 +13,26 @@ sudo_password = password  # Using the same password for sudo
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+# Connection retry settings
+max_retry_time = 180  # 3 minutes in seconds
+retry_interval = 5    # 5 seconds between retries
+start_time = time.time()
+
 try:
-    # Connect to the remote server
-    client.connect(hostname=hostname, port=port, username=username, password=password)
+    # Connect to the remote server with retry logic
+    connected = False
+    while not connected and (time.time() - start_time) < max_retry_time:
+        try:
+            client.connect(hostname=hostname, port=port, username=username, password=password, timeout=10)
+            connected = True
+        except (paramiko.AuthenticationException, paramiko.SSHException, paramiko.ssh_exception.NoValidConnectionsError, Exception) as e:
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= max_retry_time:
+                raise e
+            time.sleep(retry_interval)
+    
+    if not connected:
+        raise Exception("Failed to connect within 3 minutes")
 
     # Using sudo -S to read password from stdin
     command = f"echo '{sudo_password}' | sudo -S kubeadm token create --print-join-command"
