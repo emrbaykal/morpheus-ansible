@@ -15,11 +15,11 @@
     src: "{{ role_path }}/files/{{ item }}"
     dest: "/tmp/{{ item }}"
   with_items:
-    - mysql-apt-config_0.8.33-1_all.deb
+    - mysql-apt-config_0.8.36-1_all.deb
 
 - name: Install mysql-apt-config package
   apt:
-    deb: /tmp/mysql-apt-config_0.8.33-1_all.deb
+    deb: /tmp/mysql-apt-config_0.8.36-1_all.deb
     state: present
 
 - name: Update apt cache
