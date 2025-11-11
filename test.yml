@@ -15,8 +15,8 @@
      failed_when: dns_check.rc != 0
      loop: "{{ groups[morpheus['instance']['configGroup']] | default([]) }}"
      until: dns_check.rc == 0
-     retries: 96
-     delay: 5
-     delegate_to: localhost
+    # retries: 96
+    # delay: 5
+
 
   

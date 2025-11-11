@@ -7,7 +7,6 @@
   loop: "{{ groups[morpheus['instance']['configGroup']] | default([]) }}"
   async: 480
   poll: 5
-  delegate_to: localhost
   
 - name: Create MySQL config file with credentials
   copy:
