@@ -10,7 +10,7 @@
   tasks:
       
    - name: Check DNS resolution for all cluster hosts
-     shell: "timeout 480 nslookup {{ item }}"
+     shell: "nslookup {{ item }}"
      register: dns_check
      failed_when: dns_check.rc != 0
      loop: "{{ groups[morpheus['instance']['configGroup']] | default([]) }}"
