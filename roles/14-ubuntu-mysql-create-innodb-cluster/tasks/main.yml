@@ -115,7 +115,9 @@
   shell: >
        mysqlsh --defaults-file=/tmp/.mylogin.cnf --no-wizard --js --file=/tmp/configure_instance.js
   register: mysqlsh_output
-  failed_when: mysqlsh_output.rc != 0
+  until: mysqlsh_output.rc == 0
+  retries: 96
+  delay: 5
 
 - name: Display MySQL Shell output
   debug:
