@@ -12,11 +12,10 @@
    - name: Check DNS resolution for all cluster hosts
      shell: "nslookup {{ item }}"
      register: dns_check
-     failed_when: dns_check.rc != 0
      loop: "{{ groups[morpheus['instance']['configGroup']] | default([]) }}"
      until: dns_check.rc == 0
-    # retries: 96
-    # delay: 5
+     retries: 96
+     delay: 5
 
 
   
