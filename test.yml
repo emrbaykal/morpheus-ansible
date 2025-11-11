@@ -9,15 +9,13 @@
     #ansible_become_password: "{{ lookup('cypher','secret=password/ansible') }}"
   tasks:
       
-     - name: Hostname info
-       shell: hostname
-       register: hostname_output
-       #when: ansible_facts['hostname'] == morpheus['instance']['name']
-    
-
-     - name: Hostname
-       debug:
-          var: hostname_output.stdout
-      # when: ansible_facts['hostname'] == morpheus['instance']['name']
+   - name: Check DNS resolution for all cluster hosts
+     shell: "timeout 480 nslookup {{ item }}"
+     register: dns_check
+     failed_when: dns_check.rc != 0
+     loop: "{{ groups[morpheus['instance']['configGroup']] | default([]) }}"
+     async: 480
+     poll: 5
+     delegate_to: localhost
 
   
