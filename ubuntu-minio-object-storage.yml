@@ -12,10 +12,10 @@
            - role::os-preconfigure
            - role::os-preconfigure::configure-issue
 
-       - role: 04-ubuntu-os-update
-         tags:
-           - role::os-preconfigure
-           - role::os-preconfigure::os-upgrade
+      # - role: 04-ubuntu-os-update
+      #   tags:
+      #     - role::os-preconfigure
+      #     - role::os-preconfigure::os-upgrade
 
        - role: 15-ubuntu-minio-post-provision
          tags:
