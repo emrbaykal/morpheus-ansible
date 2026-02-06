@@ -9,13 +9,14 @@
     #ansible_become_password: "{{ lookup('cypher','secret=password/ansible') }}"
   tasks:
       
-   - name: Check DNS resolution for all cluster hosts
-     shell: "nslookup {{ item }}"
-     register: dns_check
-     loop: "{{ groups[morpheus['instance']['configGroup']] | default([]) }}"
-     until: dns_check.rc == 0
-     retries: 96
-     delay: 5
-
-
-  
+   - name: Write server info to /tmp
+     copy:
+       dest: "/tmp/server_info.txt"
+       content: |
+         Hostname: {{ ansible_hostname }}
+         FQDN: {{ ansible_fqdn }}
+         OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+         Kernel: {{ ansible_kernel }}
+         IP: {{ ansible_default_ipv4.address | default('N/A') }}
+         CPU: {{ ansible_processor_vcpus }} vCPU
+         RAM: {{ (ansible_memtotal_mb / 1024) | round(1) }} GB
