@@ -10,7 +10,3 @@
        - role: 09-ubuntu-kubernetes-drain-node
          tags:
            - role::k8-worker-node-drain
-
-
-
-  
