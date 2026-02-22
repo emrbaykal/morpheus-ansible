@@ -16,7 +16,6 @@ The following enterprise infrastructure stacks are supported:
 
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
-- [Prerequisites](#prerequisites)
 - [Repository Structure](#repository-structure)
 - [Playbooks Overview](#playbooks-overview)
 - [Morpheus Integration Parameters](#morpheus-integration-parameters)
@@ -87,38 +86,6 @@ The following enterprise infrastructure stacks are supported:
 | Object Storage     | MinIO                           | Latest DEB           |
 | MinIO Client       | mcli                            | Latest DEB           |
 | Filesystem         | XFS                             | —                    |
-
----
-
-## Prerequisites
-
-### System Requirements
-
-| Resource | Kubernetes Nodes | MySQL Nodes  | MinIO Nodes                   |
-|----------|-----------------|--------------|-------------------------------|
-| OS       | Ubuntu 24.04    | Ubuntu 24.04 | Ubuntu 24.04                  |
-| CPU      | 2+ cores        | 2+ cores     | 2+ cores                      |
-| RAM      | 4+ GB           | 8+ GB        | 16+ GB                        |
-| Disk     | 40+ GB root     | 64+ GB root  | 48+ GB root + multiple data disks |
-| Network  | Static IP       | Static IP    | Static IP                     |
-
-### Software Requirements
-
-- Morpheus Enterprise (for workflow orchestration and variable injection)
-- Ansible installed on the Morpheus worker/runner node
-- Python 3 with `pip` (installed on target hosts during execution)
-- SSH key-based access from Morpheus runner to all target hosts
-
-### Network Requirements
-
-- All nodes must be reachable over SSH (port 22) from the Ansible runner
-- Nodes within each cluster must reach each other on required ports:
-  - Kubernetes: 6443 (API), 2379-2380 (etcd), 10250-10259 (kubelet/scheduler/controller)
-  - MySQL: 3306 (SQL), 33060 (mysqlsh), 33061 (group replication)
-  - MinIO: 9000 (S3 API), 9001 (console)
-- Internet access or a local mirror for APT packages
-- NFS server accessible from Kubernetes nodes (for NFS StorageClass)
-- MetalLB IP range must be free and routable on the local network
 
 ---
 
@@ -290,13 +257,45 @@ All parameters are injected by Morpheus Enterprise into Ansible playbooks as ext
 
 Located in the `scripts/` directory. These are registered as Morpheus Tasks and executed as part of Workflows between Ansible playbook steps.
 
-| Script | Purpose |
-|---|---|
-| `get-join-command.py` | SSH to the Kubernetes control plane, retrieve the `kubeadm join` command, and return it to Morpheus as a result variable (`k8getjoin`). Retries for up to 3 minutes. |
-| `innodb_cluster_setup.py` | Standalone utility for MySQL InnoDB Cluster creation. Can be run independently for troubleshooting or re-initialization. |
-| `drain-k8-command.py` | Issues `kubectl drain` for a target node via the Kubernetes API. Used prior to node decommissioning. |
-| `label-k8-command.py` | Applies labels to Kubernetes nodes via the API. Used for workload scheduling and node identification. |
-| `minio-bucket-create.py` | Creates MinIO buckets using the MinIO Python SDK or mcli. Used for post-deployment bucket provisioning. |
+### Morpheus Code Wrapping
+
+Morpheus Enterprise implements a **Code Wrapping** mechanism that allows Python scripts to act as a bridge between workflow stages. When a Python Task is executed, Morpheus wraps the script at runtime by:
+
+1. **Injecting a `morpheus` context object** into the script's global namespace — no import is required. This object exposes all platform variables including instance metadata, server details, and custom option inputs provided by the end-user at catalog order time.
+2. **Capturing `stdout`** from the script execution and storing it as a named **result variable** in the Morpheus context, based on the **Result Type** configured on the Task (value, key/value pairs, or JSON).
+3. **Making the result available to subsequent tasks** in the same workflow via `morpheus['results']['<result_name>']`, which can then be injected into Ansible playbooks as extra variables.
+
+This pattern enables hybrid workflows where an Ansible playbook provisions infrastructure, a Python script queries the provisioned state (e.g. retrieves a generated token or command), and the output is automatically passed forward into a second Ansible playbook — all within a single Morpheus Workflow execution, without any manual handoff.
+
+**Example flow used in this repository (Kubernetes cluster deploy):**
+
+```
+[Ansible Task]  ubuntu-k8-post-provision.yml
+                  → installs Kubernetes packages on all nodes
+
+[Python Task]   get-join-command.py
+                  → reads morpheus['instance']['name'] (injected by code wrapping)
+                  → SSHes to control plane, runs kubeadm token create
+                  → prints join command to stdout
+                  → Morpheus captures output → stores as morpheus['results']['k8getjoin']
+
+[Ansible Task]  ubuntu-k8-initilize-cluster.yml
+                  → initializes the control plane
+
+[Ansible Task]  ubuntu-k8-join-node.yml
+                  → reads morpheus['results']['k8getjoin'] as an extra var
+                  → joins worker nodes using the captured join command
+```
+
+### Script Reference
+
+| Script | Morpheus Variables Consumed | Purpose |
+|---|---|---|
+| `get-join-command.py` | `morpheus['instance']['name']` | SSHes to the control plane with retry logic (3 min timeout), runs `kubeadm token create --print-join-command`, and returns the join command as a result variable (`k8getjoin`) consumed by the subsequent Ansible join-node task. |
+| `label-k8-command.py` | `morpheus['instance']['name']`, `morpheus['server']['hostname']` | Connects to the control plane and applies the `node-role.kubernetes.io/worker=worker` label to the current worker node. Skips execution if running on the control plane node itself. |
+| `drain-k8-command.py` | `morpheus['instance']['name']`, `morpheus['server']['hostname']` | Connects to the control plane and issues `kubectl drain` with `--ignore-daemonsets` and `--delete-emptydir-data` for the target worker node, preparing it for safe decommissioning. |
+| `innodb_cluster_setup.py` | — | Standalone utility for MySQL InnoDB Cluster creation. Can be used independently for troubleshooting or re-initialization outside the standard workflow. |
+| `minio-bucket-create.py` | — | Creates MinIO buckets post-deployment using the MinIO Python SDK or mcli. |
 
 ---
 
