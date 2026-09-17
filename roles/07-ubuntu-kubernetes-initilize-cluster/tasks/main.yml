@@ -4,19 +4,20 @@
     prompt: "Wait for 2 minutes before proceeding kubernetes cluster !!"
     minutes: 2
 
-- name: Install Required Kubernetes Management Packages
+- name: Install Python tooling
   apt:
-    name: "{{ item }}"
+    name:
+      - python3-pip
+      - python3-venv
+      - python3-jmespath
     state: present
-  with_items:
-    - python3-pip
+    update_cache: yes
 
-- name: Install python packages
-  shell: pip3 install {{ item }} --break-system-packages
-  with_items:
-    - PyYAML
-    - jmespath
-    - kubernetes
+- name: Install kubernetes client into venv
+  pip:
+    name: kubernetes
+    virtualenv: /opt/k8s-venv
+    virtualenv_command: python3 -m venv
 
 - name: Check if admin.conf is present
   stat:
@@ -27,19 +28,20 @@
   block:
     - name: initialize K8S cluster
       shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5
+
     - name: create .kube directory
       file:
-        path: "$HOME/.kube"
+        path: "{{ ansible_env.HOME }}/.kube"
         state: directory
-        mode: 0755
+        mode: '0755'
 
     - name: copy admin.conf to user's kube config
       copy:
         remote_src: yes
         src: /etc/kubernetes/admin.conf
         dest: "{{ ansible_env.HOME }}/.kube/config"
-        owner: "{{ lookup('pipe','id -u') | int }}"
-        group: "{{ lookup('pipe','id -g') | int }}"
+        owner: "{{ ansible_user_uid }}"
+        group: "{{ ansible_user_gid }}"
 
     - name: Wait for 3 minutes before proceeding configure Flannel
       pause:
@@ -48,13 +50,13 @@
 
   when: not adminconf_check.stat.exists
 
-
-
 - name: Get node status
   kubernetes.core.k8s_info:
     kind: Node
     name: "{{ ansible_hostname }}"
   register: nodestate
+  vars:
+    ansible_python_interpreter: /opt/k8s-venv/bin/python
 
 - name: Initilize Flannel
   block:
@@ -73,7 +75,8 @@
     - name: Apply Flannel manifest
       kubernetes.core.k8s:
         state: present
-        src: "{{ ansible_env.HOME }}/kube-flannel.yml" 
-  when: 
+        src: "{{ ansible_env.HOME }}/kube-flannel.yml"
+  vars:
+    ansible_python_interpreter: /opt/k8s-venv/bin/python
+  when:
     - nodestate.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | map(attribute='status') | first == "False"
-
