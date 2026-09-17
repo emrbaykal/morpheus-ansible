@@ -1,0 +1,18 @@
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: {{ metallb_pool_name }}
+  namespace: metallb-system
+spec:
+  addresses:
+    - "{{ morpheus['customOptions']['metalb_ip_range'] }}"
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: {{ metallb_l2_name }}
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - {{ metallb_pool_name }}

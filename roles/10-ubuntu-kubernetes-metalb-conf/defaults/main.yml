@@ -1,1 +1,14 @@
 ---
+# MetalLB release applied to the cluster. Pinned so every cluster gets the same version;
+# change it deliberately after checking https://github.com/metallb/metallb/releases.
+metallb_version: v0.14.9
+
+# kubeconfig used by every kubectl call in this role (it runs on the control plane).
+k8s_admin_kubeconfig: /etc/kubernetes/admin.conf
+
+# Names of the objects this role creates.
+metallb_pool_name: default-pool
+metallb_l2_name: default
+
+# Seconds to wait for the MetalLB workloads.
+metallb_ready_timeout: 300
