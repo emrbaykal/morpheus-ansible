@@ -1,23 +1,43 @@
-# Enable IPv4 packet forwarding  
---- 
+---
+# Kernel prerequisites from the Kubernetes container runtime guide:
+# overlay + br_netfilter modules, bridged traffic visible to iptables, IPv4 forwarding.
+- name: Load the Kubernetes kernel modules at boot
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    mode: '0644'
+
+- name: Remove the old modules-load file
+  file:
+    path: /etc/modules-load.d/containerd.conf
+    state: absent
+
+- name: Load the kernel modules now
+  command: "modprobe {{ item }}"
+  loop:
+    - overlay
+    - br_netfilter
+  changed_when: false
+
 - name: Set sysctl parameters for Kubernetes
   copy:
     dest: /etc/sysctl.d/k8s.conf
     content: |
       net.ipv4.ip_forward = 1
-  notify: apply-sysctl-parameters
+      net.bridge.bridge-nf-call-iptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+    mode: '0644'
 
-- name: Create modules-load configuration for containerd
-  copy:
-    dest: /etc/modules-load.d/containerd.conf
-    content: |
-      br_netfilter
-  notify: load-br_netfilter-module
+# Runs every time: the modules above must be loaded before the bridge keys exist,
+# and a reboot or another package may have reset a value.
+- name: Apply sysctl parameters
+  command: sysctl --system
+  changed_when: false
 
-- name: Flush handlers
-  meta: flush_handlers
-
-- name: Apply sysctl parameters from /etc/sysctl.conf
-  command: sysctl -p /etc/sysctl.conf
-
-  
+- name: Verify the sysctl values
+  command: sysctl -n net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables
+  register: k8s_sysctl_values
+  changed_when: false
+  failed_when: k8s_sysctl_values.stdout_lines | map('trim') | list != ['1', '1', '1']

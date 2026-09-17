@@ -1,4 +1,5 @@
 ---
+# Provision phase, every node of the instance.
 - hosts: all
   gather_facts: true
   become: true
@@ -7,6 +8,11 @@
     ansible_user: ansible
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   roles:
+       - role: 19-ubuntu-hosts-file
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::hosts-file
+
        - role: 01-ubuntu-config-issue
          tags:
            - role::os-preconfigure
@@ -36,5 +42,3 @@
          tags:
            - role::os-preconfigure
            - role::os-preconfigure::kubernetes-conf
-       
-       

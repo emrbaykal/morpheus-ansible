@@ -1,1 +1,4 @@
 ---
+# Comma-separated kubeadm preflight checks to ignore, e.g. "Swap,FileAvailable--etc-kubernetes-pki-ca.crt".
+# Empty by default: roles 02 and 03 prepare the node so every check should pass.
+kubeadm_join_ignore_preflight: ""

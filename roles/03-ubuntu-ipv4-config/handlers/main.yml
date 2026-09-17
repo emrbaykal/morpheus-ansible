@@ -1,7 +1,3 @@
 ---
-
-- name: apply-sysctl-parameters
-  command: sysctl --system
-
-- name: load-br_netfilter-module
-  command: modprobe br_netfilter
+# No handlers: the module load and the sysctl apply are ordinary tasks in this role,
+# because their order matters (modules first, then sysctl).

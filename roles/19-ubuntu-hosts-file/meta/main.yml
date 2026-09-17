@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  author: emrbaykal
+  description: Write every node of the Morpheus instance to /etc/hosts
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble
+dependencies: []

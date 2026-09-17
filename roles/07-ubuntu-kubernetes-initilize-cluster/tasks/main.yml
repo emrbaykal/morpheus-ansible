@@ -1,82 +1,73 @@
 ---
-- name: Wait for 2 minutes before proceeding kubernetes cluster
-  pause:
-    prompt: "Wait for 2 minutes before proceeding kubernetes cluster !!"
-    minutes: 2
+# Control plane only (gated in ubuntu-k8-initilize-cluster.yml).
+# All cluster calls use kubectl with admin.conf; no Python Kubernetes client is needed.
 
-- name: Install Python tooling
-  apt:
-    name:
-      - python3-pip
-      - python3-venv
-      - python3-jmespath
-    state: present
-    update_cache: yes
+- name: Wait for cloud-init to finish
+  command: cloud-init status --wait
+  register: cloud_init_wait
+  changed_when: false
+  # rc 2 = finished with recoverable errors; a missing cloud-init must not stop the role.
+  failed_when: false
 
-- name: Install kubernetes client into venv
-  pip:
-    name: kubernetes
-    virtualenv: /opt/k8s-venv
-    virtualenv_command: python3 -m venv
+- name: Initialize the Kubernetes control plane
+  command: >-
+    kubeadm init
+    --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }}
+    --v=5
+  args:
+    creates: "{{ k8s_admin_kubeconfig }}"
 
-- name: Check if admin.conf is present
-  stat:
-    path: /etc/kubernetes/admin.conf
-  register: adminconf_check
+- name: Create the .kube directory
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+    mode: '0755'
 
-- name: Initialize cluster
-  block:
-    - name: initialize K8S cluster
-      shell: kubeadm init --pod-network-cidr={{ morpheus['customOptions']['pod_cidr'] }} --v=5
+- name: Copy admin.conf to the kube config of the become user
+  copy:
+    remote_src: true
+    src: "{{ k8s_admin_kubeconfig }}"
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    owner: "{{ ansible_user_uid }}"
+    group: "{{ ansible_user_gid }}"
+    mode: '0600'
 
-    - name: create .kube directory
-      file:
-        path: "{{ ansible_env.HOME }}/.kube"
-        state: directory
-        mode: '0755'
+- name: Wait for the API server to report ready
+  command: kubectl --kubeconfig {{ k8s_admin_kubeconfig }} get --raw=/readyz
+  register: api_ready
+  until: api_ready.rc == 0
+  retries: "{{ (k8s_ready_timeout | int) // 5 }}"
+  delay: 5
+  changed_when: false
 
-    - name: copy admin.conf to user's kube config
-      copy:
-        remote_src: yes
-        src: /etc/kubernetes/admin.conf
-        dest: "{{ ansible_env.HOME }}/.kube/config"
-        owner: "{{ ansible_user_uid }}"
-        group: "{{ ansible_user_gid }}"
+- name: Download the Flannel manifest
+  get_url:
+    url: "https://github.com/flannel-io/flannel/releases/download/{{ flannel_version }}/kube-flannel.yml"
+    dest: "{{ ansible_env.HOME }}/kube-flannel-{{ flannel_version }}.yml"
+    mode: '0644'
 
-    - name: Wait for 3 minutes before proceeding configure Flannel
-      pause:
-        prompt: "Wait for 3 minutes before proceeding configure Flannel !!"
-        minutes: 3
+- name: Set the pod network CIDR in the Flannel manifest
+  replace:
+    path: "{{ ansible_env.HOME }}/kube-flannel-{{ flannel_version }}.yml"
+    regexp: '"Network": "[^"]*"'
+    replace: "\"Network\": \"{{ morpheus['customOptions']['pod_cidr'] }}\""
 
-  when: not adminconf_check.stat.exists
+# kubectl apply is idempotent, so the manifest is applied on every run.
+- name: Apply the Flannel manifest
+  command: kubectl --kubeconfig {{ k8s_admin_kubeconfig }} apply -f {{ ansible_env.HOME }}/kube-flannel-{{ flannel_version }}.yml
+  register: flannel_apply
+  changed_when: flannel_apply.stdout is search('created|configured')
 
-- name: Get node status
-  kubernetes.core.k8s_info:
-    kind: Node
-    name: "{{ ansible_hostname }}"
-  register: nodestate
-  vars:
-    ansible_python_interpreter: /opt/k8s-venv/bin/python
+- name: Wait for the control plane node to become Ready
+  command: >-
+    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+    wait --for=condition=Ready node/{{ ansible_facts['nodename'] | lower }}
+    --timeout={{ k8s_ready_timeout }}s
+  changed_when: false
 
-- name: Initilize Flannel
-  block:
-    - name: Download Flannel manifest
-      get_url:
-        url: https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
-        dest: "{{ ansible_env.HOME }}/kube-flannel.yml"
-        mode: '0644'
-
-    - name: Update Network CIDR in Flannel manifest
-      replace:
-        path: "{{ ansible_env.HOME }}/kube-flannel.yml"
-        regexp: '"Network": "[^"]*"'
-        replace: "\"Network\": \"{{ morpheus['customOptions']['pod_cidr'] }}\""
-
-    - name: Apply Flannel manifest
-      kubernetes.core.k8s:
-        state: present
-        src: "{{ ansible_env.HOME }}/kube-flannel.yml"
-  vars:
-    ansible_python_interpreter: /opt/k8s-venv/bin/python
-  when:
-    - nodestate.resources[0].status.conditions | selectattr('type', 'equalto', 'Ready') | map(attribute='status') | first == "False"
+- name: Wait for CoreDNS
+  command: >-
+    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+    -n kube-system rollout status deployment/coredns
+    --timeout={{ k8s_ready_timeout }}s
+  changed_when: false

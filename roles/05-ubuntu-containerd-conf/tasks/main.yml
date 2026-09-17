@@ -1,8 +1,4 @@
 ---
-- name: Update apt package index
-  apt:
-    update_cache: yes
-
 - name: Install required packages
   apt:
     name:
@@ -10,6 +6,7 @@
       - curl
       - nfs-common
     state: present
+    update_cache: true
 
 - name: Create directory for apt keyrings
   file:
@@ -21,10 +18,6 @@
   get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
-
-- name: Set permissions for Docker's GPG key
-  file:
-    path: /etc/apt/keyrings/docker.asc
     mode: '0644'
 
 - name: Add Docker repository to apt sources
@@ -32,19 +25,34 @@
     filename: docker
     repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
-  notify: update-apt-package
 
 - name: Install containerd.io
   apt:
     name: containerd.io
     state: present
 
-- name: Replace existing containerd configuration
+# The configuration is generated from the installed containerd instead of shipping a
+# fixed file, so it always matches the containerd version the Docker repository delivers.
+- name: Generate the default containerd configuration
+  command: containerd config default
+  register: containerd_default
+  changed_when: false
+
+- name: Check that the default configuration has the cgroup driver setting
+  assert:
+    that:
+      - "'SystemdCgroup = false' in containerd_default.stdout"
+    fail_msg: "containerd config default has no 'SystemdCgroup = false' line; review this role for the installed containerd version."
+    quiet: true
+
+- name: Write the containerd configuration with the systemd cgroup driver
   copy:
-    src: files/config.toml
     dest: /etc/containerd/config.toml
+    content: "{{ containerd_default.stdout | replace('SystemdCgroup = false', 'SystemdCgroup = true') }}\n"
     owner: root
     group: root
     mode: '0644'
   notify: containerd-service
 
+- name: Apply the containerd configuration
+  meta: flush_handlers

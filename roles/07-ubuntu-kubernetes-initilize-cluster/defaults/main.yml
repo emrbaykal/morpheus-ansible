@@ -1,1 +1,10 @@
 ---
+# Flannel release applied to the cluster. Pinned so every cluster gets the same CNI;
+# change it deliberately after checking https://github.com/flannel-io/flannel/releases.
+flannel_version: v0.28.9
+
+# kubeconfig used by every kubectl call in this role.
+k8s_admin_kubeconfig: /etc/kubernetes/admin.conf
+
+# Seconds to wait for the API server, the node and CoreDNS.
+k8s_ready_timeout: 600

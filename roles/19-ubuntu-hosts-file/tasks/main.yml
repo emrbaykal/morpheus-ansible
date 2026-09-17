@@ -1,0 +1,32 @@
+---
+# Source of truth is morpheus['instance']['containers']: one entry per node of the
+# instance, with hostname and internalIp already set during the Provision phase
+# (field-verified 2026-09-17 with test.yml on a 3-node order).
+
+- name: Build the node list from the Morpheus instance
+  set_fact:
+    hosts_file_all: "{{ morpheus['instance']['containers'] | default([]) }}"
+    hosts_file_nodes: >-
+      {{ morpheus['instance']['containers'] | default([])
+         | selectattr('hostname', 'defined') | selectattr('hostname')
+         | selectattr('internalIp', 'defined') | selectattr('internalIp')
+         | sort(attribute='hostname') | list }}
+
+- name: Check that every node of the instance has a hostname and an IP
+  assert:
+    that:
+      - hosts_file_all | length > 0
+      - hosts_file_nodes | length == hosts_file_all | length
+    fail_msg: >-
+      morpheus.instance.containers lists {{ hosts_file_all | length }} node(s) but
+      {{ hosts_file_nodes | length }} have both hostname and internalIp.
+      {{ hosts_file_path }} was not changed.
+    quiet: true
+
+- name: Update this node's hosts file
+  include_tasks: local.yml
+  when: not (hosts_file_controller_only | bool)
+
+- name: Update the controller's hosts file
+  include_tasks: controller.yml
+  when: hosts_file_controller_only | bool

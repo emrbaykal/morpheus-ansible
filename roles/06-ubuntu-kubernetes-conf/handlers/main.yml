@@ -1,5 +1,2 @@
 ---
-
-- name: update-apt-package
-  apt:
-    update_cache: yes
+# No handlers: apt_repository refreshes the cache itself.

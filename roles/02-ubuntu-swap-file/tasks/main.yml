@@ -1,20 +1,22 @@
-- name: Check if swapfile exists
-  stat:
+---
+# kubelet refuses to start while swap is on. Turn off every swap device, not only
+# the /swap.img file of the Ubuntu installer, and keep it off after a reboot.
+- name: Turn off all swap
+  command: swapoff -a
+  when: (ansible_facts['swaptotal_mb'] | int) > 0
+
+- name: Comment out swap entries in /etc/fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#\s]\S*\s+\S+\s+swap\s.*)$'
+    replace: '# \1'
+
+- name: Remove the installer swap file
+  file:
     path: /swap.img
-  register: swapfile
+    state: absent
 
-- block:
-    - name: Disable swap
-      command: swapoff /swap.img
-
-    - name: Remove swapfile entry from /etc/fstab
-      lineinfile:
-        path: /etc/fstab
-        state: absent
-        regexp: '^/swap.img'
-
-    - name: Remove the swapfile
-      file:
-        path: /swap.img
-        state: absent
-  when: swapfile.stat.exists
+- name: Mask swap.target so no swap unit is activated at boot
+  systemd:
+    name: swap.target
+    masked: true

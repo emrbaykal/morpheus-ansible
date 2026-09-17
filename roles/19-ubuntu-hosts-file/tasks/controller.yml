@@ -1,0 +1,24 @@
+---
+- name: Find the controller in the node list
+  set_fact:
+    hosts_file_controller: >-
+      {{ hosts_file_nodes
+         | selectattr('hostname', 'match', '^' ~ (morpheus['instance']['name'] | regex_escape) ~ '$', true)
+         | list }}
+
+- name: Check that the controller was found
+  assert:
+    that:
+      - hosts_file_controller | length == 1
+    fail_msg: >-
+      No node with hostname {{ morpheus['instance']['name'] }} (the instance name) in
+      {{ hosts_file_nodes | map(attribute='hostname') | join(', ') }}.
+    quiet: true
+
+- name: Write every node of the instance to the controller's hosts file
+  blockinfile:
+    path: "{{ hosts_file_path }}"
+    marker: "# {mark} MORPHEUS INSTANCE NODES (managed by Ansible)"
+    block: "{{ lookup('template', 'hosts_block.j2') }}"
+  delegate_to: "{{ hosts_file_controller[0].internalIp }}"
+  when: (ansible_facts['hostname'] | lower) != (morpheus['instance']['name'] | lower)

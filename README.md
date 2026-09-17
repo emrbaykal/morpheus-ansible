@@ -20,7 +20,7 @@ The following enterprise infrastructure stacks are supported:
 - [Playbooks Overview](#playbooks-overview)
 - [Morpheus Integration Parameters](#morpheus-integration-parameters)
 - [Role Reference](#role-reference)
-- [Python Helper Scripts](#python-helper-scripts)
+- [Helper Scripts](#helper-scripts)
 - [Usage Examples](#usage-examples)
 - [Security Features](#security-features)
 - [License](#license)
@@ -110,11 +110,14 @@ morpheus-ansible/
 ├── host_vars/                                   # Host-level Ansible variable files
 ├── images/                                      # Morpheus workflow & catalog screenshots
 │
-├── scripts/                                     # Python helper scripts (Morpheus tasks)
-│   ├── get-join-command.py                      # Retrieve kubeadm join command → Morpheus result
+├── scripts/                                     # Morpheus task scripts (see scripts/README.md)
+│   ├── k8getjoin.groovy                         # Groovy: kubeadm join command → result k8getjoin
+│   ├── k8labelworker.groovy                     # Groovy: label this node as a Kubernetes worker
+│   ├── k8getjoin_probe.groovy                   # Groovy: binding / SSH diagnostic
+│   ├── get-join-command.py                      # Superseded by k8getjoin.groovy
+│   ├── label-k8-command.py                      # Superseded by k8labelworker.groovy
 │   ├── innodb_cluster_setup.py                  # InnoDB cluster creation utility
-│   ├── drain-k8-command.py                      # kubectl drain via Kubernetes API
-│   ├── label-k8-command.py                      # Apply labels to Kubernetes nodes
+│   ├── drain-k8-command.py                      # kubectl drain via the control plane
 │   └── minio-bucket-create.py                   # Create MinIO buckets post-deployment
 │
 └── roles/
@@ -135,7 +138,8 @@ morpheus-ansible/
     ├── 15-ubuntu-minio-post-provision/          # MinIO disk preparation (XFS format/mount)
     ├── 16-ubuntu-minio-conf/                    # MinIO server installation and configuration
     ├── 17-ubuntu-minio-clinet-conf/             # MinIO client (mcli) setup and alias
-    └── 18-ubuntu-kubernetes-s3-storage-class/   # S3/MinIO StorageClass via Helm
+    ├── 18-ubuntu-kubernetes-s3-storage-class/   # S3/MinIO StorageClass via Helm
+    └── 19-ubuntu-hosts-file/                    # Instance node list in /etc/hosts
 ```
 
 ---
@@ -150,9 +154,9 @@ Each top-level playbook is an entry point that delegates execution to one or mor
 
 | Playbook | Roles Invoked | Execution Scope |
 |---|---|---|
-| `ubuntu-k8-post-provision.yml` | 01 → 02 → 03 → 04 → 05 → 06 | All nodes |
+| `ubuntu-k8-post-provision.yml` | 19 → 01 → 02 → 03 → 05 → 06 | All nodes |
 | `ubuntu-k8-initilize-cluster.yml` | 07 | Control plane only |
-| `ubuntu-k8-join-node.yml` | 08 | Worker nodes only |
+| `ubuntu-k8-join-node.yml` | 19 (controller only) → 08 | Worker nodes only |
 | `ubuntu-k8-drain-node.yml` | 09 | Target decommission node |
 | `ubuntu-k8-metalb-conf.yml` | 10 | Control plane only |
 | `ubuntu-k8-kubernetes-storage-class.yml` | 11 → 18 | Control plane only |
@@ -161,13 +165,16 @@ Each top-level playbook is an entry point that delegates execution to one or mor
 
 ```
 Provision Workflow:
-  └─ ubuntu-k8-post-provision.yml       [all nodes]      → roles 01, 02, 03, 04, 05, 06
+  ├─ ubuntu-k8-post-provision.yml       [all nodes]      → roles 19, 01, 02, 03, 05, 06
+  └─ ubuntu-k8-initilize-cluster.yml    [control plane]  → role 07
 
 Post-Provision Workflow:
-  ├─ get-join-command.py                [control plane]  → retrieves kubeadm join token
-  ├─ ubuntu-k8-initilize-cluster.yml   [control plane]  → role 07
-  ├─ ubuntu-k8-join-node.yml           [worker nodes]   → role 08
-  ├─ ubuntu-k8-metalb-conf.yml         [control plane]  → role 10
+  ├─ k8getjoin.groovy                   [workers]        → retrieves kubeadm join command
+  ├─ ubuntu-k8-join-node.yml            [workers]        → roles 19 (controller), 08
+  └─ k8labelworker.groovy               [workers]        → labels the node as a worker
+
+Day 2 (run when needed):
+  ├─ ubuntu-k8-metalb-conf.yml          [control plane]  → role 10
   └─ ubuntu-k8-kubernetes-storage-class.yml [control plane] → roles 11, 18
 ```
 
@@ -222,7 +229,8 @@ All parameters are injected by Morpheus Enterprise into Ansible playbooks as ext
 | `morpheus['customOptions']['minio_root_password']` | 16, 17 | `MinioPass123!` | MinIO root password |
 | `morpheus['customOptions']['minio_s3_api_port']` | 16 | `9000` | MinIO S3 API port |
 | `morpheus['customOptions']['minio_console_port']` | 16 | `9001` | MinIO web console port |
-| `morpheus['results']['k8getjoin']` | 08 | *(generated)* | kubeadm join command output from `get-join-command.py` |
+| `morpheus['results']['k8getjoin']` | 08 | *(generated)* | kubeadm join command output from `k8getjoin.groovy` |
+| `morpheus['instance']['containers']` | 19, Groovy tasks | *(generated)* | Every node of the instance with `hostname` and `internalIp` |
 | `morpheus['instance']['name']` | 07, 10, 11, 14, 18 | `k8s-master-01` | Instance hostname — used to identify the primary node |
 | `morpheus['instance']['configGroup']` | 14 | `mysql-cluster` | Config group listing all cluster member hostnames |
 
@@ -250,12 +258,14 @@ All parameters are injected by Morpheus Enterprise into Ansible playbooks as ext
 | 16 | `roles/16-ubuntu-minio-conf/` | MinIO server installation and configuration | [README](roles/16-ubuntu-minio-conf/README.md) |
 | 17 | `roles/17-ubuntu-minio-clinet-conf/` | MinIO client (mcli) setup | [README](roles/17-ubuntu-minio-clinet-conf/README.md) |
 | 18 | `roles/18-ubuntu-kubernetes-s3-storage-class/` | S3/MinIO StorageClass via Helm | [README](roles/18-ubuntu-kubernetes-s3-storage-class/README.md) |
+| 19 | `roles/19-ubuntu-hosts-file/` | Instance node list (IP + hostname) in `/etc/hosts` | [README](roles/19-ubuntu-hosts-file/README.md) |
 
 ---
 
-## Python Helper Scripts
+## Helper Scripts
 
-Located in the `scripts/` directory. These are registered as Morpheus Tasks and executed as part of Workflows between Ansible playbook steps.
+Located in the `scripts/` directory and registered as Morpheus Tasks, executed as part of Workflows between Ansible playbook steps. The Kubernetes tasks are Groovy: they run inside the appliance JVM, so they need no Python, virtualenv or pip on the appliance. Task settings, authentication and failure behaviour are documented in [scripts/README.md](scripts/README.md).
+
 
 ### Morpheus Code Wrapping
 
@@ -271,31 +281,37 @@ This pattern enables hybrid workflows where an Ansible playbook provisions infra
 
 ```
 [Ansible Task]  ubuntu-k8-post-provision.yml
-                  → installs Kubernetes packages on all nodes
-
-[Python Task]   get-join-command.py
-                  → reads morpheus['instance']['name'] (injected by code wrapping)
-                  → SSHes to control plane, runs kubeadm token create
-                  → prints join command to stdout
-                  → Morpheus captures output → stores as morpheus['results']['k8getjoin']
+                  → /etc/hosts node list, OS prep, containerd, Kubernetes packages (all nodes)
 
 [Ansible Task]  ubuntu-k8-initilize-cluster.yml
-                  → initializes the control plane
+                  → kubeadm init + Flannel on the control plane
+
+[Groovy Task]   k8getjoin.groovy
+                  → finds the control plane in morpheus.instance.containers
+                  → SSHes to its IP, waits for the API server, runs kubeadm token create
+                  → prints the join command to stdout
+                  → Morpheus captures output → stores as morpheus['results']['k8getjoin']
 
 [Ansible Task]  ubuntu-k8-join-node.yml
                   → reads morpheus['results']['k8getjoin'] as an extra var
-                  → joins worker nodes using the captured join command
+                  → joins the worker node using the captured join command
+
+[Groovy Task]   k8labelworker.groovy
+                  → labels the worker node from the control plane
 ```
 
 ### Script Reference
 
 | Script | Morpheus Variables Consumed | Purpose |
 |---|---|---|
-| `get-join-command.py` | `morpheus['instance']['name']` | SSHes to the control plane with retry logic (3 min timeout), runs `kubeadm token create --print-join-command`, and returns the join command as a result variable (`k8getjoin`) consumed by the subsequent Ansible join-node task. |
-| `label-k8-command.py` | `morpheus['instance']['name']`, `morpheus['server']['hostname']` | Connects to the control plane and applies the `node-role.kubernetes.io/worker=worker` label to the current worker node. Skips execution if running on the control plane node itself. |
+| `k8getjoin.groovy` | `instance.name`, `instance.containers`, `server.hostname`, `morpheus.applianceUrl`, `morpheus.apiAccessToken` | Connects to the control plane by the IP Morpheus holds for it, waits until the API server answers `/readyz`, and returns `kubeadm token create --print-join-command --ttl 1h` as the result variable `k8getjoin`. Does nothing on the control plane. |
+| `k8labelworker.groovy` | `instance.name`, `instance.containers`, `server.hostname` | Waits for the node object and applies `node-role.kubernetes.io/worker=worker` with `--overwrite` from the control plane. Does nothing on the control plane. |
+| `k8getjoin_probe.groovy` | all bindings | Diagnostic: SSH libraries in the appliance JVM, available bindings, the shape of `instance.containers`, and whether the Ansible SSH key is readable. |
 | `drain-k8-command.py` | `morpheus['instance']['name']`, `morpheus['server']['hostname']` | Connects to the control plane and issues `kubectl drain` with `--ignore-daemonsets` and `--delete-emptydir-data` for the target worker node, preparing it for safe decommissioning. |
+| `get-join-command.py` | `morpheus['instance']['name']` | Superseded by `k8getjoin.groovy`; kept for reference. |
+| `label-k8-command.py` | `morpheus['instance']['name']`, `morpheus['server']['hostname']` | Superseded by `k8labelworker.groovy`; kept for reference. |
 | `innodb_cluster_setup.py` | — | Standalone utility for MySQL InnoDB Cluster creation. Can be used independently for troubleshooting or re-initialization outside the standard workflow. |
-| `minio-bucket-create.py` | — | Creates MinIO buckets post-deployment using the MinIO Python SDK or mcli. |
+| `minio-bucket-create.py` | — | Creates MinIO buckets post-deployment using `mcli`. |
 
 ---
 
@@ -331,8 +347,8 @@ Workflows define the ordered sequence of Tasks (Ansible playbooks and Python scr
 
 | Phase | Tasks |
 |---|---|
-| Provision | Ubuntu K8 Post Installation |
-| Post-Provision | K8 Get Join Command → Ubuntu K8 Initialize Cluster → Ubuntu K8 Join Cluster → K8 Label Node As Worker |
+| Provision | Ubuntu K8 Post Installation → Ubuntu K8 Initialize Cluster |
+| Post-Provision | K8 Get Join Command (`k8getjoin.groovy`) → Ubuntu K8 Join Cluster → K8 Label Node As Worker (`k8labelworker.groovy`) |
 
 #### MinIO Server Provisioning Workflow
 

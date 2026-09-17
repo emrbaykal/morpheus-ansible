@@ -1,33 +1,53 @@
 ---
 - name: Check if node is already part of a cluster
-  ansible.builtin.stat:
+  stat:
     path: /etc/kubernetes/kubelet.conf
   register: kubelet_conf
 
 - name: Join Kubernetes worker node
   when: not kubelet_conf.stat.exists
-  become: true
   vars:
     join_command: "{{ morpheus['results']['k8getjoin'] | default('') | trim }}"
   block:
     - name: Validate join command from k8getjoin
-      ansible.builtin.assert:
+      assert:
         that:
           - join_command is match('^kubeadm join ')
         fail_msg: "results.k8getjoin is empty or is not a kubeadm join command"
         quiet: true
 
-    - name: Join Kubernetes cluster
-      ansible.builtin.shell: "{{ join_command }} --ignore-preflight-errors all"
-      register: join_result
-      no_log: true
+    - name: Run kubeadm join
+      block:
+        # no_log because the command line carries the bootstrap token. The result is
+        # checked in the next task so that kubeadm's own error text is still shown.
+        - name: Join Kubernetes cluster
+          command: >-
+            {{ join_command }}
+            {{ ('--ignore-preflight-errors=' ~ kubeadm_join_ignore_preflight) if kubeadm_join_ignore_preflight else '' }}
+          register: join_result
+          failed_when: false
+          no_log: true
+
+        - name: Fail when kubeadm join failed
+          fail:
+            msg: "kubeadm join failed (rc={{ join_result.rc }}): {{ join_result.stderr_lines | default([]) | join(' | ') }}"
+          when: join_result.rc != 0
+
+      rescue:
+        # A half-finished join leaves files behind that make the next attempt fail preflight.
+        - name: Reset the node after a failed join
+          command: kubeadm reset --force
+
+        - name: Report the failed join
+          fail:
+            msg: "Join failed and the node was reset; re-run the task. Cause: {{ ansible_failed_result.msg | default('unknown') }}"
 
     - name: Kubernetes cluster node join result
-      ansible.builtin.debug:
+      debug:
         var: join_result.stdout_lines
 
     - name: Wait for kubelet to become healthy
-      ansible.builtin.uri:
+      uri:
         url: http://127.0.0.1:10248/healthz
       register: kubelet_health
       until: kubelet_health.status | default(-1) == 200

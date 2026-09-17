@@ -1,0 +1,42 @@
+---
+- name: Collect this node's own names
+  set_fact:
+    hosts_file_self_names: >-
+      {{ [inventory_hostname, ansible_facts['nodename'], ansible_facts['hostname']]
+         | map('lower') | unique | reject('match', '^localhost') | list }}
+
+- name: Check that this node is in the instance node list
+  assert:
+    that:
+      - (ansible_facts['hostname'] | lower) in (hosts_file_nodes | map(attribute='hostname') | map('lower') | list)
+    fail_msg: >-
+      {{ ansible_facts['hostname'] }} is not among the instance nodes
+      ({{ hosts_file_nodes | map(attribute='hostname') | join(', ') }}); {{ hosts_file_path }} was not changed.
+    quiet: true
+
+- name: Write every node of the instance to the hosts file
+  blockinfile:
+    path: "{{ hosts_file_path }}"
+    marker: "# {mark} MORPHEUS INSTANCE NODES (managed by Ansible)"
+    block: "{{ lookup('template', 'hosts_block.j2') }}"
+
+# Provisioning writes "127.0.0.1 <fqdn> <hostname> localhost". That line comes before the
+# block, so the node would keep resolving its own name to loopback.
+- name: Stop resolving this node's own names to 127.0.0.1
+  replace:
+    path: "{{ hosts_file_path }}"
+    regexp: '(?i)^(127\.0\.0\.1(?:[ \t]+\S+)*?)[ \t]+{{ item | regex_escape }}(?=[ \t]|$)'
+    replace: '\1'
+  loop: "{{ hosts_file_self_names }}"
+
+- name: Remove 127.0.0.1 lines left without a name
+  lineinfile:
+    path: "{{ hosts_file_path }}"
+    regexp: '^127\.0\.0\.1[ \t]*$'
+    state: absent
+
+- name: Remove the 127.0.1.1 entry inherited from the template image
+  lineinfile:
+    path: "{{ hosts_file_path }}"
+    regexp: '^127\.0\.1\.1[ \t]'
+    state: absent
