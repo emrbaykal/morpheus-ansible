@@ -12,8 +12,3 @@
 
 - name: Update this node's hosts file
   include_tasks: local.yml
-  when: not (hosts_file_controller_only | bool)
-
-- name: Update the controller's hosts file
-  include_tasks: controller.yml
-  when: hosts_file_controller_only | bool

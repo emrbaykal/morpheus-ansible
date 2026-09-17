@@ -1,4 +1,2 @@
 ---
-# false: write the node list on this host (Provision phase).
-# true : write it on the controller instead, delegated from a worker (Post Provision phase).
-hosts_file_controller_only: false
+# No variables: the node list comes from morpheus.instance.containers.

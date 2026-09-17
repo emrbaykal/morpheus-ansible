@@ -1,6 +1,7 @@
 ---
-# Post Provision phase, after the k8getjoin Groovy task. Runs on every node; both roles
-# skip the control plane (the node whose hostname equals the instance name).
+# Post Provision phase. Morpheus runs this phase on every node of the instance, also when a
+# node is added later, so each node refreshes its /etc/hosts and only the new node joins.
+# The control plane is skipped for the join role: its hostname equals the instance name.
 - hosts: all
   gather_facts: true
   become: true
@@ -9,11 +10,7 @@
     ansible_user: ansible
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   roles:
-       # Adds this instance's node list to the controller's /etc/hosts as well, so a
-       # controller built earlier learns about nodes added to the instance later.
        - role: 19-ubuntu-hosts-file
-         vars:
-           hosts_file_controller_only: true
          tags:
            - role::k8-worker-node::hosts-file
 

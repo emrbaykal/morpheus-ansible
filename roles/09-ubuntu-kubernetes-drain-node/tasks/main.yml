@@ -1,8 +1,8 @@
 ---
 # Removes this node from the cluster before Morpheus deletes the VM. Drain and delete run on
 # the control plane through Ansible's own SSH connection (delegate_to), the reset and the
-# cleanup run here. Every step tolerates a node that is already gone, so the role can be
-# re-run and never blocks the deletion of the VM.
+# cleanup run here. Nothing in this role may block the deletion of the VM, so a control plane
+# that is already gone is reported and skipped, and every step tolerates a re-run.
 
 - name: Check if node is part of a cluster
   stat:
@@ -32,6 +32,18 @@
       become: false
       changed_when: true
 
+  rescue:
+    # In Teardown the control plane is often already gone. Removing this node from a cluster
+    # that no longer exists is pointless and must not fail the workflow.
+    - name: Report that the cluster could not be reached
+      debug:
+        msg: >-
+          Could not remove {{ k8s_node_name }} from the cluster
+          ({{ ansible_failed_result.msg | default('unknown') }}). Continuing with the local cleanup.
+
+- name: Clean up the local Kubernetes state
+  when: kubelet_conf.stat.exists
+  block:
     - name: Reset kubeadm on this node
       command: kubeadm reset --force
 
