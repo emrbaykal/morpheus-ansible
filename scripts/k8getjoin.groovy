@@ -68,6 +68,22 @@ String readCypher(String baseUrl, String token, String key) {
     return value
 }
 
+// The Groovy task binding is not a Map: `morpheus` is a com.morpheus.MorpheusAccess object
+// that exposes applianceUrl and apiAccessToken, while `instance` and `server` are top-level
+// bindings. The source list keeps the script portable across Morpheus versions.
+def bindingValue(List<Closure> sources) {
+    for (Closure c : sources) {
+        try {
+            def v = c.call()
+            if (v != null) {
+                return v
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+    return null
+}
+
 boolean isAuthFailure(Throwable t) {
     String m = (t?.message ?: "").toLowerCase()
     return m.contains("auth fail") || m.contains("auth cancel") || m.contains("too many authentication")
@@ -129,9 +145,9 @@ Map run(Session session, String command, String password) {
 }
 
 // The node of the instance whose hostname equals the instance name, by IP.
-String controllerIp(def instance) {
-    String name = instance?.name
-    def node = instance?.containers?.find { it.hostname == name }
+String controllerIp(def inst) {
+    String name = inst?.name
+    def node = inst?.containers?.find { it.hostname == name }
     if (!node?.internalIp) {
         throw new RuntimeException("no IP for control plane '${name}' in instance.containers")
     }
@@ -140,15 +156,20 @@ String controllerIp(def instance) {
 
 // ---- Main ------------------------------------------------------------------------------
 try {
-    def instance = morpheus.instance
+    def inst = bindingValue([{ instance }, { morpheus['instance'] }])
+    if (!inst?.name) {
+        throw new RuntimeException("no 'instance' binding in this task context; bindings are " +
+                binding.variables.keySet())
+    }
+    def srv = bindingValue([{ server }, { morpheus['server'] }])
 
     // The control plane needs no join command: the join role skips it.
-    if (morpheus.server?.hostname == instance?.name) {
+    if (srv?.hostname == inst.name) {
         println ""
         return
     }
 
-    String host = controllerIp(instance)
+    String host = controllerIp(inst)
     String pw = null
     Session session = null
     if (new File(SSH_KEY_PATH).canRead()) {
