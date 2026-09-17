@@ -1,54 +1,59 @@
 ---
-#- name: Check if node is already part of a cluster
-#  stat:
-#    path: /etc/kubernetes/kubelet.conf
-#  register: kubelet_conf
+# Removes this node from the cluster before Morpheus deletes the VM. Drain and delete run on
+# the control plane through Ansible's own SSH connection (delegate_to), the reset and the
+# cleanup run here. Every step tolerates a node that is already gone, so the role can be
+# re-run and never blocks the deletion of the VM.
 
-#- name: Drain kubernetes node on ESXI 
-#  block:
-#    - name: Drain node from ESXI K8 cluster
-#      kubernetes.core.k8s_drain:
-#        name: "{{ ansible_hostname }}"
-#        state: drain
-#        delete_options:
-#          delete_emptydir_data: true
-#          force: true
-#          ignore_daemonsets: true
-#      vars:
-#          ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-#      delegate_to: "{{ hostvars[groups['esxi_kubernetes_master'][0]]['ansible_host'] }}"
+- name: Check if node is part of a cluster
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
 
-    - name: Reset kubeadm on ESXI Worker Node
+- name: Remove this node from the cluster
+  when: kubelet_conf.stat.exists
+  block:
+    - name: Drain the node on the control plane
+      command: >-
+        kubectl --kubeconfig {{ k8s_remote_kubeconfig }}
+        drain {{ k8s_node_name }}
+        --ignore-daemonsets --delete-emptydir-data --force
+        --timeout={{ k8s_drain_timeout }}s
+      delegate_to: "{{ k8s_controller_ip }}"
+      become: false
+      register: k8s_drain
+      failed_when: k8s_drain.rc != 0 and 'not found' not in k8s_drain.stderr
+      changed_when: k8s_drain.rc == 0
+
+    - name: Delete the node object on the control plane
+      command: >-
+        kubectl --kubeconfig {{ k8s_remote_kubeconfig }}
+        delete node {{ k8s_node_name }} --ignore-not-found
+      delegate_to: "{{ k8s_controller_ip }}"
+      become: false
+      changed_when: true
+
+    - name: Reset kubeadm on this node
       command: kubeadm reset --force
-    
-#    - name: Delete node from ESXI K8 cluster
-#      kubernetes.core.k8s:
-#        state: absent
-#        kind: Node
-#        name: "{{ ansible_hostname }}"
-#      vars:
-#          ansible_become_password: "{{ lookup('cypher','secret=password/hpe-user') }}"
-#      delegate_to: "{{ hostvars[groups['esxi_kubernetes_master'][0]]['ansible_host'] }}"
 
-    - name: Remove Kubernetes packages on ESXI Worker Node
-      apt:
-        name: 
-          - kubelet
-          - kubeadm
-          - kubectl
-        state: absent
-        purge: yes
-
-    - name: Remove .kube directory on ESXI Worker Node
+    - name: Remove the CNI configuration
       file:
-        path: "~/.kube"
+        path: /etc/cni/net.d
         state: absent
 
-#  when: 
-#    - kubelet_conf.stat.exists
-#    - "'ESXi' in morpheus['instance']['layoutName']"
+- name: Remove the kube configs
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /root/.kube
+    - "/home/{{ ansible_user }}/.kube"
 
-
-
-
-
+- name: Remove Kubernetes packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: absent
+    purge: true
+  when: k8s_drain_purge_packages | bool

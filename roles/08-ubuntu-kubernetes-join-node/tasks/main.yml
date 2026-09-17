@@ -66,3 +66,28 @@
   delegate_to: "{{ k8s_controller_ip }}"
   become: false
   changed_when: true
+
+# kubectl on the worker itself, as root, without copying credentials by hand.
+- name: Read the kubeconfig from the control plane
+  slurp:
+    src: "{{ k8s_remote_kubeconfig }}"
+  delegate_to: "{{ k8s_controller_ip }}"
+  become: false
+  register: k8s_kubeconfig_remote
+
+- name: Create the .kube directory of root
+  file:
+    path: "{{ k8s_root_kubeconfig | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Write the kubeconfig into root's profile
+  copy:
+    content: "{{ k8s_kubeconfig_remote.content | b64decode }}"
+    dest: "{{ k8s_root_kubeconfig }}"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true

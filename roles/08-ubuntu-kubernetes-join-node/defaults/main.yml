@@ -10,6 +10,9 @@ k8s_controller_ip: >-
   {{ (morpheus['instance']['containers']
       | selectattr('hostname', 'equalto', morpheus['instance']['name']) | first).internalIp }}
 
+# kubeconfig placed in root's profile on this node, copied from the control plane.
+k8s_root_kubeconfig: /root/.kube/config
+
 # Lifetime of the bootstrap token created for this node.
 k8s_join_token_ttl: 1h
 

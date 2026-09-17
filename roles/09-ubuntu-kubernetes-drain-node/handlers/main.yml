@@ -1,5 +1,2 @@
 ---
-
-- name: update-apt-package
-  apt:
-    update_cache: yes
+# No handlers: nothing in this role needs one.

@@ -1,1 +1,19 @@
 ---
+# kubeconfig of the SSH user on the control plane, written by role 07. The tasks delegated
+# there run without become, so no sudo password is needed for the delegation target.
+k8s_remote_kubeconfig: "/home/{{ ansible_user }}/.kube/config"
+
+# Control plane = the node of this instance whose hostname equals the instance name.
+# Kept as a default, not a set_fact: delegate_to is templated even for a skipped task.
+k8s_controller_ip: >-
+  {{ (morpheus['instance']['containers']
+      | selectattr('hostname', 'equalto', morpheus['instance']['name']) | first).internalIp }}
+
+# Name this node is registered under in Kubernetes.
+k8s_node_name: "{{ ansible_facts['nodename'] | lower }}"
+
+# Seconds kubectl drain may take before it gives up.
+k8s_drain_timeout: 300
+
+# Remove the Kubernetes packages after the node has left the cluster.
+k8s_drain_purge_packages: true

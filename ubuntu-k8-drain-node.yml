@@ -1,4 +1,6 @@
 ---
+# Day 2, run against the worker node that is being removed. The control plane is never
+# drained: the role is skipped on the node whose hostname equals the instance name.
 - hosts: all
   gather_facts: true
   become: true
@@ -8,5 +10,6 @@
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
   roles:
        - role: 09-ubuntu-kubernetes-drain-node
+         when: ansible_facts['hostname'] != morpheus['instance']['name']
          tags:
            - role::k8-worker-node-drain
