@@ -32,6 +32,26 @@
     group: "{{ ansible_user_gid }}"
     mode: '0600'
 
+# Lets role 08 run kubectl/kubeadm here over Ansible's own SSH without sudo, which is what
+# a delegated task from a worker can do (Morpheus only supplies the sudo password for the
+# node the playbook targets).
+- name: Create the .kube directory of the SSH user
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0700'
+
+- name: Copy admin.conf to the kube config of the SSH user
+  copy:
+    remote_src: true
+    src: "{{ k8s_admin_kubeconfig }}"
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+
 - name: Wait for the API server to report ready
   command: kubectl --kubeconfig {{ k8s_admin_kubeconfig }} get --raw=/readyz
   register: api_ready

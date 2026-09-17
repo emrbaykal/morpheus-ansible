@@ -1,13 +1,8 @@
 ---
 # The join token is fetched from the control plane over the same SSH connection Ansible
 # already uses (delegate_to with the IP Morpheus holds for that node), so no separate task
-# script and no second set of credentials are involved.
-
-- name: Find the control plane IP
-  set_fact:
-    k8s_controller_ip: >-
-      {{ (morpheus['instance']['containers']
-          | selectattr('hostname', 'equalto', morpheus['instance']['name']) | first).internalIp }}
+# script and no second set of credentials are involved. The delegated tasks run without
+# become, against the kubeconfig role 07 left for the SSH user.
 
 - name: Check if node is already part of a cluster
   stat:
@@ -19,8 +14,9 @@
   block:
     # kubeadm writes admin.conf before the API server is up, so the file alone is no proof.
     - name: Wait for the control plane API server
-      command: kubectl --kubeconfig {{ k8s_admin_kubeconfig }} get --raw=/readyz
+      command: kubectl --kubeconfig {{ k8s_remote_kubeconfig }} get --raw=/readyz
       delegate_to: "{{ k8s_controller_ip }}"
+      become: false
       register: k8s_api_ready
       until: k8s_api_ready.rc == 0
       retries: "{{ (k8s_api_wait | int) // 10 }}"
@@ -31,8 +27,9 @@
       command: >-
         kubeadm token create --print-join-command
         --ttl {{ k8s_join_token_ttl }}
-        --kubeconfig {{ k8s_admin_kubeconfig }}
+        --kubeconfig {{ k8s_remote_kubeconfig }}
       delegate_to: "{{ k8s_controller_ip }}"
+      become: false
       register: k8s_join_command
       changed_when: true
 
@@ -63,8 +60,9 @@
 # Runs on every pass, so a re-run also fixes a missing label.
 - name: Label this node as a worker
   command: >-
-    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+    kubectl --kubeconfig {{ k8s_remote_kubeconfig }}
     label node {{ ansible_facts['nodename'] | lower }}
     node-role.kubernetes.io/worker=worker --overwrite
   delegate_to: "{{ k8s_controller_ip }}"
+  become: false
   changed_when: true

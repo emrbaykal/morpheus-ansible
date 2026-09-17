@@ -1,6 +1,14 @@
 ---
-# kubeconfig used for the kubectl/kubeadm calls delegated to the control plane.
-k8s_admin_kubeconfig: /etc/kubernetes/admin.conf
+# kubeconfig of the SSH user on the control plane, written by role 07. Used by the tasks
+# delegated there, so they need no sudo: Morpheus supplies the sudo password only for the
+# node the playbook targets, not for a delegation target.
+k8s_remote_kubeconfig: "/home/{{ ansible_user }}/.kube/config"
+
+# Control plane = the node of this instance whose hostname equals the instance name.
+# Kept as a default, not a set_fact: delegate_to is templated even for a skipped task.
+k8s_controller_ip: >-
+  {{ (morpheus['instance']['containers']
+      | selectattr('hostname', 'equalto', morpheus['instance']['name']) | first).internalIp }}
 
 # Lifetime of the bootstrap token created for this node.
 k8s_join_token_ttl: 1h
