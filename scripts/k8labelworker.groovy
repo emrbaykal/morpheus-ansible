@@ -102,6 +102,11 @@ Session connect(String host, String user, String keyPath, String password, long 
             }
             s.setConfig("StrictHostKeyChecking", "no")
             s.setConfig("PreferredAuthentications", keyPath ? "publickey" : "password")
+            // OpenSSH 8.8+ refuses RSA keys signed with SHA-1 (ssh-rsa). Ask for SHA-2
+            // explicitly; both spellings are set because the key name differs between JSch
+            // versions, and an unknown key is ignored.
+            s.setConfig("PubkeyAcceptedAlgorithms", "rsa-sha2-512,rsa-sha2-256,ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa")
+            s.setConfig("PubkeyAcceptedKeyTypes", "rsa-sha2-512,rsa-sha2-256,ssh-ed25519,ecdsa-sha2-nistp256,ssh-rsa")
             s.connect(10000)
             return s
         } catch (Throwable t) {
@@ -172,20 +177,35 @@ try {
     }
 
     String host = controllerIp(inst)
+    // Key first, Cypher password second. Every step is recorded so one failed run says which
+    // credential was refused, instead of a single "Auth fail".
     String pw = null
     Session session = null
-    if (new File(SSH_KEY_PATH).canRead()) {
+    List<String> notes = []
+    File key = new File(SSH_KEY_PATH)
+    if (key.canRead()) {
         try {
             session = connect(host, SSH_USER, SSH_KEY_PATH, null, CONNECT_RETRY_MS)
         } catch (Throwable t) {
             if (!isAuthFailure(t)) {
                 throw t
             }
+            notes << "key ${SSH_KEY_PATH} refused by ${host}"
         }
+    } else {
+        notes << "key ${SSH_KEY_PATH} not readable by JVM user ${System.getProperty('user.name')} (exists=${key.exists()})"
     }
     if (session == null) {
-        pw = readCypher(morpheus.applianceUrl.toString().replaceAll('/+$', ''), morpheus.apiAccessToken, CYPHER_KEY)
-        session = connect(host, SSH_USER, null, pw, CONNECT_RETRY_MS)
+        try {
+            pw = readCypher(morpheus.applianceUrl.toString().replaceAll('/+$', ''), morpheus.apiAccessToken, CYPHER_KEY)
+        } catch (Throwable t) {
+            throw new RuntimeException("${notes.join('; ')}; Cypher ${CYPHER_KEY}: ${t.message}")
+        }
+        try {
+            session = connect(host, SSH_USER, null, pw, CONNECT_RETRY_MS)
+        } catch (Throwable t) {
+            throw new RuntimeException("${notes.join('; ')}; password from Cypher ${CYPHER_KEY} refused: ${t.message}")
+        }
     }
     String kubectl = (pw ? "sudo -S -p '' " : "sudo -n ") + "kubectl --kubeconfig " + ADMIN_CONF + " "
 

@@ -1,4 +1,13 @@
 ---
-# Comma-separated kubeadm preflight checks to ignore, e.g. "Swap,FileAvailable--etc-kubernetes-pki-ca.crt".
-# Empty by default: roles 02 and 03 prepare the node so every check should pass.
+# kubeconfig used for the kubectl/kubeadm calls delegated to the control plane.
+k8s_admin_kubeconfig: /etc/kubernetes/admin.conf
+
+# Lifetime of the bootstrap token created for this node.
+k8s_join_token_ttl: 1h
+
+# Seconds to wait for the control plane API server; kubeadm init may still be running there.
+k8s_api_wait: 900
+
+# Comma-separated kubeadm preflight checks to ignore, e.g. "Swap". Empty by default:
+# roles 02 and 03 prepare the node so every check should pass.
 kubeadm_join_ignore_preflight: ""
