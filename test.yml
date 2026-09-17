@@ -1,4 +1,19 @@
 ---
+# test.yml — P0 diagnostic probe for the Kubernetes workflow.
+#
+# Prints the Morpheus variables that the planned hosts-file role (P1) and the
+# Groovy join/label tasks (G2, L1) depend on. It changes nothing on the node
+# except /tmp/server_info.txt.
+#
+# How to run: add it as an Ansible task (playbook test.yml) to the Kubernetes
+# workflow twice — last task of Provision and first task of Post Provision —
+# and order a cluster with at least 3 nodes. Compare the two phases.
+#
+# Only selected container fields are printed, never the whole object:
+# container entries can carry cloudConfig (user-data), which may hold secrets.
+# morpheus.results is printed as key names only, because k8getjoin holds a
+# live join token.
+
 - hosts: all
   gather_facts: true
   become: true
@@ -7,16 +22,93 @@
     ansible_user: ansible
     ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
     #ansible_become_password: "{{ lookup('cypher','secret=password/ansible') }}"
+    probe_containers: "{{ morpheus['instance']['containers'] | default([]) }}"
   tasks:
-      
-   - name: Write server info to /tmp
-     copy:
-       dest: "/tmp/server_info.txt"
-       content: |
-         Hostname: {{ ansible_hostname }}
-         FQDN: {{ ansible_fqdn }}
-         OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
-         Kernel: {{ ansible_kernel }}
-         IP: {{ ansible_default_ipv4.address | default('N/A') }}
-         CPU: {{ ansible_processor_vcpus }} vCPU
-         RAM: {{ (ansible_memtotal_mb / 1024) | round(1) }} GB
+
+    - name: "PROBE 1 - node identity and Morpheus instance/server values"
+      debug:
+        msg:
+          inventory_hostname: "{{ inventory_hostname }}"
+          ansible_hostname: "{{ ansible_hostname }}"
+          ansible_fqdn: "{{ ansible_fqdn }}"
+          default_ipv4: "{{ ansible_default_ipv4.address | default('N/A') }}"
+          instance_name: "{{ morpheus['instance']['name'] | default('MISSING') }}"
+          instance_hostname: "{{ morpheus['instance']['hostname'] | default('MISSING') }}"
+          instance_config_group: "{{ morpheus['instance']['configGroup'] | default('MISSING') }}"
+          server_name: "{{ morpheus['server']['name'] | default('MISSING') }}"
+          server_hostname: "{{ morpheus['server']['hostname'] | default('MISSING') }}"
+          server_internal_ip: "{{ morpheus['server']['internalIp'] | default('MISSING') }}"
+          num_of_k8_nodes_option: "{{ morpheus['customOptions']['num_of_k8_nodes'] | default('MISSING') }}"
+
+    - name: "PROBE 2 - top-level key names"
+      debug:
+        msg:
+          morpheus_keys: "{{ morpheus.keys() | list | sort }}"
+          instance_keys: "{{ (morpheus['instance'].keys() | list | sort) if morpheus['instance'] is mapping else 'instance is not a mapping' }}"
+          server_keys: "{{ (morpheus['server'].keys() | list | sort) if (morpheus['server'] is defined and morpheus['server'] is mapping) else 'MISSING' }}"
+          results_keys: "{{ (morpheus['results'].keys() | list | sort) if (morpheus['results'] is defined and morpheus['results'] is mapping) else 'MISSING' }}"
+
+    - name: "PROBE 3 - instance.containers summary"
+      debug:
+        msg:
+          defined: "{{ morpheus['instance']['containers'] is defined }}"
+          type: "{{ probe_containers | type_debug }}"
+          count: "{{ probe_containers | length }}"
+
+    - name: "PROBE 4 - instance.containers, one entry per line"
+      debug:
+        msg:
+          index: "{{ idx }}"
+          type: "{{ item | type_debug }}"
+          keys: "{{ (item.keys() | list | sort) if item is mapping else item }}"
+          name: "{{ item.name | default('MISSING') }}"
+          hostname: "{{ item.hostname | default('MISSING') }}"
+          internalHostname: "{{ item.internalHostname | default('MISSING') }}"
+          internalIp: "{{ item.internalIp | default('MISSING') }}"
+          externalIp: "{{ item.externalIp | default('MISSING') }}"
+          sshHost: "{{ item.sshHost | default('MISSING') }}"
+          status: "{{ item.status | default('MISSING') }}"
+          server_keys: "{{ (item.server.keys() | list | sort) if (item is mapping and item.server is defined and item.server is mapping) else 'n/a' }}"
+          server_hostname: "{{ item.server.hostname | default('MISSING') }}"
+          server_internalIp: "{{ item.server.internalIp | default('MISSING') }}"
+      loop: "{{ probe_containers }}"
+      loop_control:
+        index_var: idx
+        label: "container {{ idx }}"
+
+    - name: "PROBE 5 - which nodes are in this Ansible run"
+      debug:
+        msg:
+          play_hosts_all: "{{ ansible_play_hosts_all }}"
+          inventory_groups: "{{ groups | dict2items | map(attribute='key') | list }}"
+          config_group_members: "{{ groups.get(morpheus['instance']['configGroup'] | default(''), 'MISSING') }}"
+
+    - name: "PROBE 6 - does cloud-init manage /etc/hosts"
+      shell: "grep -rHs manage_etc_hosts /etc/cloud/cloud.cfg /etc/cloud/cloud.cfg.d/ || echo 'manage_etc_hosts not set'"
+      register: probe_cloudinit
+      changed_when: false
+
+    - name: "PROBE 6 - result"
+      debug:
+        var: probe_cloudinit.stdout_lines
+
+    - name: "PROBE 7 - current /etc/hosts"
+      command: cat /etc/hosts
+      register: probe_hosts
+      changed_when: false
+
+    - name: "PROBE 7 - result"
+      debug:
+        var: probe_hosts.stdout_lines
+
+    - name: Write server info to /tmp
+      copy:
+        dest: "/tmp/server_info.txt"
+        content: |
+          Hostname: {{ ansible_hostname }}
+          FQDN: {{ ansible_fqdn }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          IP: {{ ansible_default_ipv4.address | default('N/A') }}
+          CPU: {{ ansible_processor_vcpus }} vCPU
+          RAM: {{ (ansible_memtotal_mb / 1024) | round(1) }} GB
