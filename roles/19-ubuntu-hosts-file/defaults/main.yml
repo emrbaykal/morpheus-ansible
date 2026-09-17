@@ -1,10 +1,4 @@
 ---
-# Hosts file to edit. A variable only so the role can be tested against a copy.
-hosts_file_path: /etc/hosts
-
-# false: write the node block on this host and stop its own names resolving to 127.0.0.1
-#        (ubuntu-k8-post-provision.yml, Provision phase).
-# true : write only the node block, on the controller, delegated from a worker
-#        (ubuntu-k8-join-node.yml, Post Provision phase), so an existing controller
-#        also learns about nodes added to the instance later.
+# false: write the node list on this host (Provision phase).
+# true : write it on the controller instead, delegated from a worker (Post Provision phase).
 hosts_file_controller_only: false

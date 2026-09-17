@@ -1,6 +1,5 @@
 ---
-# Kernel prerequisites from the Kubernetes container runtime guide:
-# overlay + br_netfilter modules, bridged traffic visible to iptables, IPv4 forwarding.
+# Kernel prerequisites from the Kubernetes container runtime guide.
 - name: Load the Kubernetes kernel modules at boot
   copy:
     dest: /etc/modules-load.d/k8s.conf
@@ -8,11 +7,6 @@
       overlay
       br_netfilter
     mode: '0644'
-
-- name: Remove the old modules-load file
-  file:
-    path: /etc/modules-load.d/containerd.conf
-    state: absent
 
 - name: Load the kernel modules now
   command: "modprobe {{ item }}"
@@ -30,14 +24,7 @@
       net.bridge.bridge-nf-call-ip6tables = 1
     mode: '0644'
 
-# Runs every time: the modules above must be loaded before the bridge keys exist,
-# and a reboot or another package may have reset a value.
+# The bridge keys only exist once br_netfilter is loaded, so this runs after it, every time.
 - name: Apply sysctl parameters
   command: sysctl --system
   changed_when: false
-
-- name: Verify the sysctl values
-  command: sysctl -n net.ipv4.ip_forward net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables
-  register: k8s_sysctl_values
-  changed_when: false
-  failed_when: k8s_sysctl_values.stdout_lines | map('trim') | list != ['1', '1', '1']

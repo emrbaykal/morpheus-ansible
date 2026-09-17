@@ -1,5 +1,3 @@
 {% for n in hosts_file_nodes %}
-{% set short = n.hostname | lower %}
-{% set fqdn = ((n.server.fqdn | default('', true)) if (n.server is defined and n.server is mapping) else '') | lower %}
-{{ n.internalIp }}{% if fqdn and fqdn != short and '.' in fqdn %} {{ fqdn }}{% endif %} {{ short }}
+{{ n.internalIp }} {{ n.hostname | lower }}
 {% endfor %}

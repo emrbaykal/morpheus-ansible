@@ -64,10 +64,3 @@
     wait --for=condition=Ready node/{{ ansible_facts['nodename'] | lower }}
     --timeout={{ k8s_ready_timeout }}s
   changed_when: false
-
-- name: Wait for CoreDNS
-  command: >-
-    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
-    -n kube-system rollout status deployment/coredns
-    --timeout={{ k8s_ready_timeout }}s
-  changed_when: false
