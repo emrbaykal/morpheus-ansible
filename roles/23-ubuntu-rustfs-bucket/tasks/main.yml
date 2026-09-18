@@ -1,0 +1,75 @@
+---
+# Creates a bucket and a service account limited to it, using the rc alias role 22 stored on
+# this node. The root credentials never leave the server: Morpheus masks them in its API,
+# but Ansible receives the form values in clear text.
+
+- name: Check the form values
+  assert:
+    that:
+      - rustfs_bucket_name is match('^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$')
+      - rustfs_bucket_access_key is match('^[A-Za-z0-9]{5,64}$')
+      - rustfs_bucket_secret_key | length >= 8
+      - rustfs_bucket_policy in ['read-write', 'read-only']
+    fail_msg: >-
+      Check the form: bucket name must be lowercase S3-style, the access key 5-64 letters and
+      digits, the secret key at least 8 characters, the policy read-write or read-only.
+    quiet: true
+
+- name: Create the bucket
+  command: rc mb {{ rustfs_alias }}/{{ rustfs_bucket_name }}
+  register: rustfs_mb
+  failed_when: rustfs_mb.rc != 0 and 'exist' not in (rustfs_mb.stderr ~ rustfs_mb.stdout) | lower
+  changed_when: rustfs_mb.rc == 0
+
+# read-only gets listing and download, read-write also upload, delete and multipart. Neither
+# level can delete the bucket itself or see the other buckets on the server.
+- name: Write the bucket policy
+  template:
+    src: bucket-policy.json.j2
+    dest: /tmp/rustfs-{{ rustfs_bucket_name }}-policy.json
+    mode: '0600'
+
+- name: Create the service account
+  command: >-
+    rc admin service-account create {{ rustfs_alias }}
+    {{ rustfs_bucket_access_key }} {{ rustfs_bucket_secret_key }}
+    --name {{ rustfs_bucket_name }}
+    --description Morpheus-{{ rustfs_bucket_policy }}
+    --policy /tmp/rustfs-{{ rustfs_bucket_name }}-policy.json
+  register: rustfs_svcacct
+  failed_when: false
+  no_log: true
+  changed_when: rustfs_svcacct.rc == 0
+
+# A second run with the same access key updates the secret and the policy instead of failing.
+- name: Update the service account when the access key already exists
+  command: >-
+    rc admin service-account update {{ rustfs_alias }} {{ rustfs_bucket_access_key }}
+    --secret-key {{ rustfs_bucket_secret_key }}
+    --policy /tmp/rustfs-{{ rustfs_bucket_name }}-policy.json
+  register: rustfs_svcacct_update
+  no_log: true
+  changed_when: true
+  when:
+    - rustfs_svcacct.rc != 0
+    - "'exist' in (rustfs_svcacct.stderr ~ rustfs_svcacct.stdout) | lower"
+
+- name: Fail when the service account could not be created
+  fail:
+    msg: "rc admin service-account create failed (rc={{ rustfs_svcacct.rc }}): {{ rustfs_svcacct.stderr | default('no output') }}"
+  when:
+    - rustfs_svcacct.rc != 0
+    - "'exist' not in (rustfs_svcacct.stderr ~ rustfs_svcacct.stdout) | lower"
+
+- name: Remove the policy file
+  file:
+    path: /tmp/rustfs-{{ rustfs_bucket_name }}-policy.json
+    state: absent
+
+- name: Result
+  debug:
+    msg:
+      - "Bucket    : {{ rustfs_bucket_name }}"
+      - "Endpoint  : http://{{ ansible_default_ipv4.address | default(inventory_hostname) }}:{{ rustfs_api_port }}"
+      - "Access key: {{ rustfs_bucket_access_key }}"
+      - "Access    : {{ rustfs_bucket_policy }} on {{ rustfs_bucket_name }} only"

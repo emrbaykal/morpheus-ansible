@@ -99,7 +99,18 @@ Map signedRequest(String method, String endpoint, String path, String body,
 
     int code = conn.getResponseCode()
     InputStream stream = (code >= 200 && code < 300) ? conn.getInputStream() : conn.getErrorStream()
-    return [code: code, body: stream != null ? stream.getText("UTF-8").trim() : ""]
+    return [code: code,
+            body: stream != null ? stream.getText("UTF-8").trim() : "",
+            serverDate: conn.getHeaderField("Date")]
+}
+
+// Says what was used for signing without ever printing the secret itself, so one failed run
+// shows whether the credentials arrived intact.
+String credentialReport(String accessKey, String secret, String serverDate) {
+    boolean masked = secret ==~ /[*]+/
+    return "signed as '${accessKey}' with a ${secret.length()}-character secret" +
+            (masked ? " that is only mask characters - the value never left Morpheus" : "") +
+            ", server time ${serverDate ?: 'unknown'}, appliance time ${new Date().toGMTString()}"
 }
 
 // The order options of this instance, read over the Morpheus API on the caller's token.
@@ -197,7 +208,8 @@ try {
     // 1. The bucket. An existing bucket is fine, so the task can be run again.
     Map made = signedRequest("PUT", endpoint, "/" + bucket, null, rootKey, rootSecret, REGION, SERVICE, TIMEOUT)
     if (made.code != 200 && made.code != 409) {
-        throw new RuntimeException("PUT ${endpoint}/${bucket} returned HTTP ${made.code}: ${made.body}")
+        throw new RuntimeException("PUT ${endpoint}/${bucket} returned HTTP ${made.code}: ${made.body} " +
+                "[" + credentialReport(rootKey, rootSecret, made.serverDate) + "]")
     }
     String bucketState = made.code == 200 ? "created" : "already existed"
 
@@ -226,7 +238,8 @@ try {
     ])
     Map acc = signedRequest("PUT", endpoint, ADMIN_PATH, body, rootKey, rootSecret, REGION, SERVICE, TIMEOUT)
     if (acc.code < 200 || acc.code >= 300) {
-        throw new RuntimeException("PUT ${ADMIN_PATH} returned HTTP ${acc.code}: ${acc.body}")
+        throw new RuntimeException("PUT ${ADMIN_PATH} returned HTTP ${acc.code}: ${acc.body} " +
+                "[" + credentialReport(rootKey, rootSecret, acc.serverDate) + "]")
     }
 
     println "Bucket    : ${bucket} (${bucketState})"

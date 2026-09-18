@@ -1,0 +1,12 @@
+---
+# Alias role 22 stored on this node, which already carries the root credentials.
+rustfs_alias: rustfs
+
+# Operational workflow form values.
+rustfs_bucket_name: "{{ morpheus['customOptions']['rustfs_bucket_name'] }}"
+rustfs_bucket_access_key: "{{ morpheus['customOptions']['rustfs_bucket_access_key'] }}"
+rustfs_bucket_secret_key: "{{ morpheus['customOptions']['rustfs_bucket_secret_key'] }}"
+rustfs_bucket_policy: "{{ morpheus['customOptions']['rustfs_bucket_policy'] | default('read-write') }}"
+
+# Only used for the summary line.
+rustfs_api_port: "{{ morpheus['customOptions']['rustfs_s3_api_port'] | default('9000') }}"
