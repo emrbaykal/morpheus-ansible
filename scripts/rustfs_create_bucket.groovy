@@ -1,10 +1,12 @@
 // rustfs_create_bucket.groovy
 // Morpheus Groovy Script Task. Creates a bucket on the RustFS instance this operational
-// workflow runs against, plus a service account whose access is limited to that bucket.
-// The generated access key and secret key are printed as the task result.
+// workflow runs against, plus a service account limited to that bucket with the key pair
+// and the access level the user entered on the form.
 //
 // Task settings: CODE = rustfs_create_bucket, SOURCE = Local, no result type needed.
-// Workflow: operational, one form input (rustfs_bucket_name), target = the RustFS instance.
+// Workflow: operational, target = the RustFS instance. Form inputs:
+//   rustfs_bucket_name, rustfs_bucket_access_key, rustfs_bucket_secret_key,
+//   rustfs_bucket_policy (read-write | read-only).
 //
 // Everything happens over the S3 and admin APIs with a self-signed AWS Signature V4
 // request, so no SSH, no client binary and no stored credentials are involved. The root
@@ -154,12 +156,25 @@ try {
     }
 
     String bucket = formOpts.rustfs_bucket_name?.toString()?.trim()
-    if (!bucket) {
-        throw new RuntimeException("rustfs_bucket_name is empty; add it as a form input of this workflow")
+    String bucketKey = formOpts.rustfs_bucket_access_key?.toString()?.trim()
+    String bucketSecret = formOpts.rustfs_bucket_secret_key?.toString()?.trim()
+    String access = (formOpts.rustfs_bucket_policy ?: "read-write").toString().trim().toLowerCase()
+    if (!bucket || !bucketKey || !bucketSecret) {
+        throw new RuntimeException("rustfs_bucket_name, rustfs_bucket_access_key and " +
+                "rustfs_bucket_secret_key are required form inputs")
     }
     // S3 naming rules, checked because the name goes straight into the URL.
     if (!(bucket ==~ /[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]/)) {
         throw new RuntimeException("'${bucket}' is not a valid S3 bucket name")
+    }
+    if (!(bucketKey ==~ /[A-Za-z0-9]{5,64}/)) {
+        throw new RuntimeException("the access key must be 5-64 letters and digits, without '/'")
+    }
+    if (bucketSecret.length() < 8) {
+        throw new RuntimeException("the secret key must be at least 8 characters")
+    }
+    if (!(access in ["read-write", "read-only"])) {
+        throw new RuntimeException("rustfs_bucket_policy must be read-write or read-only, not '${access}'")
     }
 
     String applianceUrl = (morpheus.applianceUrl ?: "").toString().replaceAll('/+$', '')
@@ -186,46 +201,39 @@ try {
     }
     String bucketState = made.code == 200 ? "created" : "already existed"
 
-    // 2. A service account limited to that bucket. RustFS generates the key pair because
-    //    the request carries neither accessKey nor secretKey.
-    String policy = JsonOutput.toJson([
-        Version: "2012-10-17",
-        Statement: [[
-            Effect: "Allow",
-            Action: ["s3:*"],
-            Resource: ["arn:aws:s3:::" + bucket, "arn:aws:s3:::" + bucket + "/*"],
-        ]],
-    ])
+    // 2. A service account limited to that bucket, with the key pair from the form.
+    //    read-only gets listing and download, read-write also gets upload, delete and
+    //    multipart. Neither level can delete the bucket itself or see other buckets.
+    List bucketActions = ["s3:ListBucket", "s3:GetBucketLocation"]
+    List objectActions = ["s3:GetObject"]
+    if (access == "read-write") {
+        bucketActions += ["s3:ListBucketMultipartUploads"]
+        objectActions += ["s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload",
+                          "s3:ListMultipartUploadParts"]
+    }
     String body = JsonOutput.toJson([
-        policy: new JsonSlurper().parseText(policy),
+        accessKey: bucketKey,
+        secretKey: bucketSecret,
         name: bucket,
-        description: "Created by Morpheus for bucket " + bucket,
+        description: "Created by Morpheus for bucket ${bucket} (${access})".toString(),
+        policy: [
+            Version: "2012-10-17",
+            Statement: [
+                [Effect: "Allow", Action: bucketActions, Resource: ["arn:aws:s3:::" + bucket]],
+                [Effect: "Allow", Action: objectActions, Resource: ["arn:aws:s3:::" + bucket + "/*"]],
+            ],
+        ],
     ])
     Map acc = signedRequest("PUT", endpoint, ADMIN_PATH, body, rootKey, rootSecret, REGION, SERVICE, TIMEOUT)
     if (acc.code < 200 || acc.code >= 300) {
         throw new RuntimeException("PUT ${ADMIN_PATH} returned HTTP ${acc.code}: ${acc.body}")
     }
 
-    def parsed = null
-    try {
-        parsed = new JsonSlurper().parseText(acc.body)
-    } catch (Throwable ignored) {
-        parsed = null
-    }
-    def creds = parsed?.credentials ?: parsed
-    String newKey = creds?.accessKey ?: creds?.AccessKey
-    String newSecret = creds?.secretKey ?: creds?.SecretKey
-    if (!newKey || !newSecret) {
-        throw new RuntimeException("service account created but the response carried no key pair: " +
-                (acc.body.length() > 200 ? acc.body.substring(0, 200) + "..." : acc.body))
-    }
-
     println "Bucket    : ${bucket} (${bucketState})"
     println "Endpoint  : ${endpoint}"
     println "Console   : http://${node.internalIp}:${(opts.rustfs_console_port ?: '9001')}"
-    println "Access key: ${newKey}"
-    println "Secret key: ${newSecret}"
-    println "Scope     : full access to ${bucket} only"
+    println "Access key: ${bucketKey}"
+    println "Access    : ${access} on ${bucket} only (the secret key is the one you entered)"
 } catch (Throwable t) {
     throw new RuntimeException("rustfs_create_bucket: " + (t.message ?: t.getClass().name), t)
 }
