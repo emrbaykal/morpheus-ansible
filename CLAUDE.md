@@ -11,142 +11,141 @@ and the task scripts in `scripts/`. Nothing here is meant to be run by hand with
 
 Target OS is Ubuntu 24.04. Three stacks:
 
-- Kubernetes — kubeadm, containerd, Flannel (pinned in role 07), MetalLB v0.14.9, csi-driver-nfs v4.9.0
+- Kubernetes — kubeadm, containerd, Flannel (pinned in role 07), MetalLB (role 10), csi-driver-nfs (role 11)
 - MySQL InnoDB Cluster — mysql-apt-config 0.8.36 (shipped in role 12 `files/`), MySQL Shell
-- MinIO — `.deb` from dl.min.io, XFS data drives
+- RustFS object storage — roles 20-23, replaced MinIO in September 2026
 
 ## Conventions
 
 - Every playbook: `hosts: all`, `become: true`, `ansible_user: ansible`,
   key `/opt/morpheus/.local/.ssh/id_rsa`, interpreter `/usr/bin/python3`, one `role::...` tag per role.
 - Primary-node gating: `when: ansible_facts['hostname'] == morpheus['instance']['name']`
-  (roles 07, 10, 11, 14, 18). The join playbook uses `!=` for workers.
-- Roles are numbered `01`–`19` and use the standard galaxy skeleton.
-- Task scripts rely on Morpheus code wrapping: a global `morpheus` object is injected and stdout becomes
-  the task result. Groovy is the default language (runs in the appliance JVM, no dependencies); the
-  remaining Python tasks still take the SSH user and password as `sys.argv[1]` / `sys.argv[2]`.
-- Credentials only come from Morpheus custom options or Cypher. Never commit a real password.
+  (roles 07, 14). The join and drain playbooks use `!=` for workers.
+- Defaults hold every tunable: versions, ports, paths, timeouts. No collection dependencies — only
+  builtin modules, because the appliance ships a bare ansible-core.
+- Credentials only come from Morpheus custom options. Never commit a real password.
 
-## Live Kubernetes workflow (2026-09-17)
+## Morpheus behaviour this repository depends on (field-verified 2026-09-17/18)
 
-| Phase | Order | Task |
-|---|---|---|
-| Provision | 1 | `ubuntu-k8-post-provision.yml` (roles 19, 01, 02, 03, 05, 06) |
-| Provision | 2 | `ubuntu-k8-initilize-cluster.yml` (role 07, control plane only) |
-| Post Provision | 1 | `scripts/k8getjoin.groovy` → result `k8getjoin` |
-| Post Provision | 2 | `ubuntu-k8-join-node.yml` (roles 19 controller-only, 08) |
-| Post Provision | 3 | `scripts/k8labelworker.groovy` |
+- `morpheus['instance']['containers']` lists every node of the instance with `hostname` and
+  `internalIp`, already during the **Provision** phase. The list is not ordered.
+- `instance.configGroup` is null and each Ansible run has only its own node in inventory, so
+  `groups[...]` and `hostvars[...]` cannot reach the other nodes. Use `instance.containers`.
+- Morpheus supplies the sudo password only for the node the playbook targets, so a `delegate_to`
+  target must run with `become: false`.
+- `delegate_to` is templated even for a skipped task, so its variable must be a role default, not a
+  `set_fact`.
+- Phases (`morpheus-docs` library/automation/workflows.rst): Post Provision runs on **every** node when
+  a node is added; Pre Provision and Provision run only on the new node; Scale Down runs when a node is
+  removed; Teardown runs on VM destroy.
+- A **Password**-type Input comes back masked from `GET /api/instances/{id}`, so an appliance-side
+  Groovy task can never read it. Form values do reach a Groovy task's `customOptions` binding in clear
+  text; only the instance config is masked.
+- In a Groovy task `morpheus` is a `com.morpheus.MorpheusAccess` object (applianceUrl, apiAccessToken);
+  `instance`, `server` and `customOptions` are separate top-level bindings.
+- The appliance JSch offers `ssh-rsa` (SHA-1), which OpenSSH 8.8+ nodes reject. Ansible's own SSH is
+  unaffected — which is why node-side work belongs in roles, not in Groovy tasks.
+- The Ansible `file` module creates a missing parent directory with the **same** mode, so an implicit
+  `/data` became 0750 root and the rustfs user could not traverse it. Create parents explicitly.
 
-`README.md` still describes the older order (initialize in Post Provision); the table above is what runs.
+## Kubernetes workflow
 
-## Playbook → roles
+| Phase | Task |
+|---|---|
+| Provision | `ubuntu-k8-post-provision.yml` → `ubuntu-k8-initilize-cluster.yml` |
+| Post Provision | `ubuntu-k8-join-node.yml` |
+| Scale Down | `ubuntu-k8-drain-node.yml` |
+| Teardown | `ubuntu-k8-drain-node.yml` |
+| Day 2 | `ubuntu-k8-metalb-conf.yml`, `ubuntu-k8-kubernetes-storage-class.yml` |
 
-| Playbook | Roles | Scope |
-|---|---|---|
-| `ubuntu-k8-post-provision.yml` | 19, 01, 02, 03, 05, 06 (04 commented out) | all nodes |
-| `ubuntu-k8-initilize-cluster.yml` | 07 | control plane |
-| `ubuntu-k8-join-node.yml` | 19 (controller only), 08 | workers |
-| `ubuntu-k8-drain-node.yml` | 09 | node being removed |
-| `ubuntu-k8-metalb-conf.yml` | 10 | control plane |
-| `ubuntu-k8-kubernetes-storage-class.yml` | 11, 18 | control plane |
-| `ubuntu-mysql-innodb.yml` | 01, 12, 13, 14 (14 on primary only) | MySQL nodes |
-| `ubuntu-minio-object-storage.yml` | 01, 15, 16 (04 and 17 commented out) | MinIO nodes |
+Roles:
 
-Role notes:
+- **19** — writes every instance node (IP + hostname) into `/etc/hosts`, removes the node's own names
+  from the `127.0.0.1` line and the stale `127.0.1.1` line. Runs in both the provision and the join
+  playbook; no delegation needed because Post Provision runs on every node.
+- **01** ssh banner, **02** swapoff + fstab + mask swap.target, **03** overlay/br_netfilter +
+  ip_forward + both bridge-nf-call sysctls, **05** containerd config generated with
+  `containerd config default` and `SystemdCgroup = true` (`files/config.toml` is unused),
+  **06** apt key via `get_url` + `gpg --dearmor`, then `apt-mark hold` on the kube packages.
+- **07** — `cloud-init status --wait`, `kubeadm init` with a `creates` guard, wait for `/readyz`, apply
+  the pinned Flannel manifest, wait for node Ready. All kubectl, no Python client. Also writes
+  `/home/ansible/.kube/config` so delegated tasks need no sudo.
+- **08** — the whole join: control plane IP from `instance.containers`; delegated (`become: false`)
+  wait for `/readyz`, `kubeadm token create --print-join-command --ttl 1h`, join, reset on failure,
+  wait kubelet healthz, label the node as worker, copy the kubeconfig into `/root/.kube/config`.
+- **09** — drain + delete the node on the control plane (delegated), then `kubeadm reset --force`,
+  remove `/etc/cni/net.d` and both kube configs, purge the packages. The delegated pair sits in a
+  block/rescue so a control plane that is already gone never blocks a VM delete.
+- **10** — MetalLB: pinned manifest, wait controller deployment and speaker daemonset, then apply
+  IPAddressPool/L2Advertisement with retries (the validating webhook refuses the first attempts).
+- **11** — NFS CSI: pinned `install-driver.sh` with `KUBECONFIG`, rollout waits, StorageClass from a
+  template, block/rescue that recreates the class because its parameters are immutable. `nfs-csi` is
+  the default StorageClass; mount option `nfsvers=3`.
+- **18** — NOT yet reworked: named S3 storage class but installs Helm and repeats role 11, still uses
+  `kubernetes.core`, so it fails. Exclude it or use tags until it is rewritten.
 
-- 19 — writes every node of the instance (IP + hostname) into `/etc/hosts` from
-  `morpheus['instance']['containers']`, removes the node's own names from the `127.0.0.1` line and the
-  `127.0.1.1` line inherited from the template. With `hosts_file_controller_only: true` it only
-  delegates the block to the controller, which is how a scaled-out instance updates the existing
-  controller.
-- 02 — `swapoff -a`, comments out every swap line in `/etc/fstab`, removes `/swap.img`, masks
-  `swap.target`.
-- 03 — loads `overlay` and `br_netfilter`, writes `/etc/sysctl.d/k8s.conf` with `ip_forward` and both
-  `bridge-nf-call-ip[6]tables`, applies and then verifies the three values.
-- 05 — generates `/etc/containerd/config.toml` with `containerd config default` and flips
-  `SystemdCgroup` to true, instead of shipping a fixed file. `files/config.toml` is no longer used and
-  can be removed from git.
-- 06 — key via `get_url` + `gpg --dearmor` (not the deprecated `apt_key`), then
-  `apt-mark hold` on kubelet/kubeadm/kubectl.
-- 07 — `cloud-init status --wait`, `kubeadm init` with a `creates` guard, waits for `/readyz`, applies
-  the pinned Flannel manifest unconditionally (kubectl apply is idempotent), then waits for the node to
-  be Ready and for CoreDNS. Uses plain kubectl; no Python Kubernetes client and no venv.
-- 08 — skips if `/etc/kubernetes/kubelet.conf` exists; asserts `morpheus['results']['k8getjoin']` starts
-  with `kubeadm join`; on a failed join runs `kubeadm reset --force` and fails with kubeadm's own
-  message; waits for kubelet healthz on :10248. Preflight checks are no longer ignored
-  (`kubeadm_join_ignore_preflight` is empty by default).
-- 09 — `kubeadm reset --force`, purges kube packages. The drain/delete-node tasks are commented out;
-  draining is done by `scripts/drain-k8-command.py`.
-- 13 — cluster admin user, removes blank users and the test DB, persists
-  `sql_generate_invisible_primary_key`, writes `innodb-mysqld.cnf` (GTID on, 6G buffer pool,
-  `server_id` = last IPv4 octet).
-- 14 — builds the cluster from `groups[morpheus['instance']['configGroup']]` with a generated MySQL Shell
-  JS file (configureInstance → createCluster → addInstance with clone recovery).
-- 15 — every disk except sda/vda/xvda/sr0 is formatted XFS and mounted at `/opt/minio/miniodrive{n}`.
-- 18 — despite the name, currently installs Helm and repeats role 11's NFS tasks. No S3 StorageClass yet.
+## RustFS workflow
 
-## Morpheus variables that were field-verified (2026-09-17, test.yml on a 3-node order)
+| Phase | Task |
+|---|---|
+| Provision | `ubuntu-rustfs-object-storage.yml` (roles 01, 20, 21, 22) |
+| Operational | `rustfs-create-bucket.yml` (role 23) → `scripts/rustfs_register_bucket.groovy` |
 
-- `morpheus['instance']['containers']` is a list with one entry per node, already complete during the
-  **Provision** phase (node status `deploying`). Each entry carries `hostname`, `internalIp`,
-  `externalIp`, `sshHost` and a nested `server` map. The list is not ordered.
-- The controller is the entry whose `hostname` equals `morpheus['instance']['name']`.
-- `morpheus['instance']['configGroup']` is null for these orders, and each Ansible run has only the
-  current node in its inventory — so `groups[...]` and `hostvars[...]` cannot be used to reach the
-  other nodes. Use `instance.containers` (or `delegate_to` with an IP from it).
-- Provisioning leaves `127.0.0.1 <fqdn> <hostname> localhost` and a stale `127.0.1.1` line in
-  `/etc/hosts`; cloud-init's `manage_etc_hosts` is not set.
+- **20** — every non-system disk is XFS-formatted with label `RUSTFS<n>` and mounted by label at
+  `/data/rustfs<n>` through fstab. `/data` is created explicitly 0755.
+- **21** — `rustfs` system user, binary in `/usr/local/bin`, `/etc/default/rustfs` and the systemd unit
+  from templates, service started, S3 port awaited. `RUSTFS_VOLUMES` becomes `/data/rustfs{0...N-1}`.
+- **22** — `rc` CLI plus the alias `rustfs` holding the root credentials.
+- **23** — `rc mb`, then `rc admin service-account create <alias> <key> <secret> --name --description
+  --policy <file>`, falling back to `service-account update` when the access key exists. The policy
+  template grants ListBucket/GetBucketLocation + GetObject (read-only) plus multipart/Put/Delete
+  (read-write) on that bucket only — no DeleteBucket, no ListAllMyBuckets.
+- `rustfs_register_bucket.groovy` — `POST /api/storage-buckets` with `providerType: s3`, `bucketName`,
+  `createBucket: false` and `config` accessKey/secretKey/endpoint/region; the Morpheus name is
+  `<instance>-<bucket>` and an existing one is skipped. Endpoint is the container `internalIp` plus the
+  port from the instance config.
+
+Lab sizing: one instance, four data disks, plan above the 2 GB minimum.
 
 ## Custom options
 
 `kubernetes_vers`, `pod_cidr`, `k8_master_ip`, `metalb_ip_range`, `nfs_server_ip`, `nfs_share_path`,
 `mysql_root_password`, `innodb_admin_user`, `innodb_admin_password`, `innodb_cls_name`,
-`minio_root_user`, `minio_root_password`, `minio_s3_api_port`, `minio_console_port`,
-`num_of_k8_nodes` (catalog layout size).
-`scripts/minio-bucket-create.py` also reads `bucked_name`, `bucked_accesskey`, `bucked_secretkey`,
-`bucked_policy` (spelled "bucked" in the option codes).
+`num_of_k8_nodes`.
+
+RustFS server: `rustfs_access_key`, `rustfs_secret_key`, `rustfs_s3_api_port`, `rustfs_console_port`.
+RustFS bucket workflow: `rustfs_bucket_name`, `rustfs_bucket_access_key`, `rustfs_bucket_secret_key`,
+`rustfs_bucket_policy` (Select List: `read-write`, `read-only`).
 
 ## scripts/
 
-| Script | Purpose |
+| Script | Status |
 |---|---|
-| `k8getjoin.groovy` | Groovy task: control plane join command → result `k8getjoin`. See `scripts/README.md` |
-| `k8labelworker.groovy` | Groovy task: label this node as `node-role.kubernetes.io/worker` |
-| `k8getjoin_probe.groovy` | One-shot diagnostic for bindings, `instance.containers`, SSH libraries and key |
-| `get-join-command.py` | Superseded by `k8getjoin.groovy`; kept for reference |
-| `label-k8-command.py` | Superseded by `k8labelworker.groovy`; kept for reference |
-| `drain-k8-command.py` | `kubectl drain` the current server from the control plane |
-| `minio-bucket-create.py` | Bucket, user, policy and access key through `mcli` alias `minios3` |
-| `innodb_cluster_setup.py` | Standalone version of role 14, driven by environment variables |
-| `inputs.json` | Sample Morpheus option type export |
+| `rustfs_register_bucket.groovy` | Live — second task of the bucket workflow |
+| `k8getjoin.groovy`, `k8labelworker.groovy`, `k8getjoin_probe.groovy`, `rustfs_create_bucket.groovy` | Built, then abandoned; can be `git rm`'d |
+| `get-join-command.py`, `label-k8-command.py`, `drain-k8-command.py` | Superseded by roles 08 and 09 |
+| `innodb_cluster_setup.py` | Standalone version of role 14 |
+| `minio-bucket-create.py`, MinIO roles 15/16/17, `ubuntu-minio-object-storage.yml` | To be removed with `git rm` |
+| `inputs.json` | Sample option-type export (has a trailing comma, not valid JSON) |
 
 `test.yml` is the diagnostic probe playbook: run it as an Ansible task to dump the Morpheus variables
 the roles depend on.
 
-## Known issues (code review 2026-09-17)
+## Known issues
 
-- Role 10 and role 11 call `kubernetes.core` modules with the system Python, where the `kubernetes`
-  library is not installed. Role 07 no longer installs the venv, so these roles need the same kubectl
-  treatment.
-- Role 18 does not create an S3/MinIO StorageClass (see above).
-- Role 13 derives `server_id` from the last IPv4 octet. Nodes in different subnets with the same last
-  octet collide, which breaks a later ClusterSet.
+- Role 18 does not create an S3/MinIO StorageClass and still uses `kubernetes.core`.
+- Role 13 derives `server_id` from the last IPv4 octet — nodes in different subnets collide.
 - Role 14 wraps createCluster/addInstance in try/catch inside the JS, so mysqlsh exits 0 on failure and
   the task reports success. The JS file containing the password is written without `no_log`.
-- Role 16 installs from the `aistor` download path; role 17 installs `.../mc` (a binary, not a `.deb`)
-  and uses `mc`, while `minio-bucket-create.py` calls `mcli`.
-- `minio-bucket-create.py` steps 3–5 check the `exit_status` left over from step 2.
-- The remaining Python tasks print errors but exit 0, so Morpheus marks a failed task as successful.
-  The sudo password is also embedded in the remote command line.
-- `scripts/inputs.json` has a trailing comma and is not valid JSON.
-- `roles/15-ubuntu-minio-post-provision/vars/main.yml` holds commented-out sample credentials.
+- The remaining Python task scripts print errors but exit 0, so Morpheus marks a failed task successful.
 - Role 12 ships unused `mysql-apt-config_0.8.33` files; role 13 ships copies it never uses.
-- Cypher `password/` keys are generated values with a default 32-day lease. If `password/ansible`
-  expires, the Groovy tasks fall back to a password that no longer matches. Key authentication is
-  tried first for exactly this reason.
 
 ## Working rules
 
 - Claude edits files; Emre reviews, commits and pushes.
 - Ask before changing the design.
+- Claude does not delete files — it hands over the `git rm` commands.
 - Emre sets the version numbers in the Groovy script headers.
+- Every change is tested before delivery: `ansible-playbook --syntax-check`, fake
+  `kubectl`/`kubeadm`/`rc`/API harnesses, `groovyc` compile, and an md5 comparison between the tested
+  copy and the file on disk.
