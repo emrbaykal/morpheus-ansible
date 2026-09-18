@@ -1,0 +1,6 @@
+---
+# Disks matching this pattern are the system disk and are never touched.
+rustfs_system_disks: '^(sda|vda|xvda|sr0)$'
+
+# Each data disk is mounted at <rustfs_data_root>/rustfs<n>, which is what RUSTFS_VOLUMES expects.
+rustfs_data_root: /data

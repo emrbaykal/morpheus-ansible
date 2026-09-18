@@ -1,0 +1,14 @@
+---
+# RustFS server package. "latest" is what the vendor publishes; pin a release here when
+# a fixed version is needed.
+rustfs_package_url: https://dl.rustfs.com/artifacts/rustfs/release/rustfs-linux-x86_64-musl-latest.zip
+
+rustfs_user: rustfs
+rustfs_data_root: /data
+rustfs_log_directory: /var/log/rustfs
+
+# Order form values.
+rustfs_access_key: "{{ morpheus['customOptions']['rustfs_access_key'] }}"
+rustfs_secret_key: "{{ morpheus['customOptions']['rustfs_secret_key'] }}"
+rustfs_api_port: "{{ morpheus['customOptions']['rustfs_s3_api_port'] | default('9000') }}"
+rustfs_console_port: "{{ morpheus['customOptions']['rustfs_console_port'] | default('9001') }}"

@@ -1,0 +1,35 @@
+---
+# Installs the RustFS CLI (rc) and stores an alias for this server, so the object store can
+# be used from the node itself.
+
+- name: Download the RustFS CLI
+  get_url:
+    url: "{{ rustfs_cli_url }}"
+    dest: /tmp/rustfs-cli.tar.gz
+    mode: '0644'
+
+- name: Unpack the CLI binary
+  unarchive:
+    src: /tmp/rustfs-cli.tar.gz
+    dest: /usr/local/bin
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Set the alias for this server
+  command: >-
+    rc alias set {{ rustfs_alias }}
+    http://localhost:{{ rustfs_api_port }}
+    {{ rustfs_access_key }} {{ rustfs_secret_key }}
+  no_log: true
+  changed_when: true
+
+- name: Read back the service state
+  command: rc ready {{ rustfs_alias }}
+  register: rustfs_ready
+  changed_when: false
+
+- name: Show the service state
+  debug:
+    var: rustfs_ready.stdout_lines

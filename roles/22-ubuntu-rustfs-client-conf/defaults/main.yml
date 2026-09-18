@@ -1,0 +1,10 @@
+---
+# RustFS CLI release. Check https://github.com/rustfs/cli/releases before changing it.
+rustfs_cli_version: v0.1.30
+rustfs_cli_url: "https://github.com/rustfs/cli/releases/download/{{ rustfs_cli_version }}/rustfs-cli-linux-amd64-{{ rustfs_cli_version }}.tar.gz"
+
+# Alias the client stores for this server.
+rustfs_alias: rustfs
+rustfs_access_key: "{{ morpheus['customOptions']['rustfs_access_key'] }}"
+rustfs_secret_key: "{{ morpheus['customOptions']['rustfs_secret_key'] }}"
+rustfs_api_port: "{{ morpheus['customOptions']['rustfs_s3_api_port'] | default('9000') }}"

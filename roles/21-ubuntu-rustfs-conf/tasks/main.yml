@@ -1,0 +1,101 @@
+---
+# Installs the RustFS binary, its systemd unit and the environment file, then starts the
+# service. The data disks are prepared by role 20.
+
+- name: Install the required packages
+  apt:
+    name:
+      - unzip
+      - curl
+    state: present
+    update_cache: true
+
+- name: Create the service user
+  user:
+    name: "{{ rustfs_user }}"
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Download the RustFS package
+  get_url:
+    url: "{{ rustfs_package_url }}"
+    dest: /tmp/rustfs.zip
+    mode: '0644'
+
+- name: Unpack the RustFS binary
+  unarchive:
+    src: /tmp/rustfs.zip
+    dest: /usr/local/bin
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  notify: restart-rustfs
+
+- name: Find the mounted data directories
+  find:
+    paths: "{{ rustfs_data_root }}"
+    patterns: 'rustfs*'
+    file_type: directory
+  register: rustfs_data_dirs
+
+- name: Check that the data directories exist
+  assert:
+    that:
+      - rustfs_data_dirs.files | length > 0
+    fail_msg: "No {{ rustfs_data_root }}/rustfs* directory found; run role 20 first."
+    quiet: true
+
+- name: Create the log directory
+  file:
+    path: "{{ rustfs_log_directory }}"
+    state: directory
+    owner: "{{ rustfs_user }}"
+    group: "{{ rustfs_user }}"
+    mode: '0750'
+
+- name: Set the ownership of the data directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ rustfs_user }}"
+    group: "{{ rustfs_user }}"
+    mode: '0750'
+  loop: "{{ rustfs_data_dirs.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Write the environment file
+  template:
+    src: rustfs.env.j2
+    dest: /etc/default/rustfs
+    owner: root
+    group: "{{ rustfs_user }}"
+    mode: '0640'
+  no_log: true
+  notify: restart-rustfs
+
+- name: Install the systemd unit
+  template:
+    src: rustfs.service.j2
+    dest: /etc/systemd/system/rustfs.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart-rustfs
+
+- name: Enable and start RustFS
+  systemd:
+    name: rustfs
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply a changed configuration
+  meta: flush_handlers
+
+- name: Wait for the S3 API port
+  wait_for:
+    port: "{{ rustfs_api_port }}"
+    timeout: 60

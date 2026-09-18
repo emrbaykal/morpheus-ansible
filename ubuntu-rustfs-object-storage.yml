@@ -1,0 +1,27 @@
+---
+# Provision phase, every node of the instance. RustFS replaces the MinIO roles.
+- hosts: all
+  gather_facts: true
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_user: ansible
+    ansible_ssh_private_key_file: /opt/morpheus/.local/.ssh/id_rsa
+  roles:
+       - role: 01-ubuntu-config-issue
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::configure-issue
+
+       - role: 20-ubuntu-rustfs-post-provision
+         tags:
+           - role::os-preconfigure
+           - role::os-preconfigure::rustfs-requirements
+
+       - role: 21-ubuntu-rustfs-conf
+         tags:
+           - role::rustfs-conf
+
+       - role: 22-ubuntu-rustfs-client-conf
+         tags:
+           - role::rustfs-client-conf
