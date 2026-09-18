@@ -1,1 +1,16 @@
 ---
+# NFS CSI driver release. Pinned so every cluster gets the same version; change it
+# deliberately after checking https://github.com/kubernetes-csi/csi-driver-nfs/releases.
+nfs_csi_version: v4.9.0
+
+# kubeconfig used by every kubectl call in this role (it runs on the control plane).
+k8s_admin_kubeconfig: /etc/kubernetes/admin.conf
+
+# StorageClass created from the nfs_server_ip / nfs_share_path custom options.
+nfs_storage_class_name: nfs-csi
+nfs_storage_class_default: true
+nfs_mount_options:
+  - nfsvers=3
+
+# Seconds to wait for the driver workloads.
+nfs_ready_timeout: 300

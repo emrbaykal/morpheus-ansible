@@ -1,60 +1,72 @@
 ---
-- name: Download NFS CSI Driver install script
+# Control plane only (gated in ubuntu-k8-kubernetes-storage-class.yml). Everything runs
+# through kubectl with admin.conf: no Python Kubernetes client and no collection are needed.
+
+- name: Download the NFS CSI driver install script
   get_url:
-    url: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/v4.9.0/deploy/install-driver.sh
+    url: "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/{{ nfs_csi_version }}/deploy/install-driver.sh"
     dest: /tmp/install-driver.sh
     mode: '0755'
 
-- name: Install NFS CSI Driver
-  shell: /tmp/install-driver.sh v4.9.0 --
+# The script calls kubectl itself, so the kubeconfig is handed to it through the environment.
+- name: Install the NFS CSI driver
+  command: /tmp/install-driver.sh {{ nfs_csi_version }} --
+  environment:
+    KUBECONFIG: "{{ k8s_admin_kubeconfig }}"
+  register: nfs_csi_install
+  changed_when: nfs_csi_install.stdout is search('created|configured')
 
-- name: Wait for NFS CSI controller pods to be ready
-  kubernetes.core.k8s_info:
-    kind: Pod
-    namespace: kube-system
-    label_selectors:
-      - app=csi-nfs-controller
-    wait: yes
-    wait_timeout: 300
-    wait_condition:
-      type: Ready
-      status: "True"
+- name: Wait for the NFS CSI controller
+  command: >-
+    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+    -n kube-system rollout status deployment/csi-nfs-controller
+    --timeout={{ nfs_ready_timeout }}s
+  changed_when: false
 
-- name: Wait for NFS CSI node pods to be ready
-  kubernetes.core.k8s_info:
-    kind: Pod
-    namespace: kube-system
-    label_selectors:
-      - app=csi-nfs-node
-    wait: yes
-    wait_timeout: 300
-    wait_condition:
-      type: Ready
-      status: "True"
+- name: Wait for the NFS CSI node plugin
+  command: >-
+    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+    -n kube-system rollout status daemonset/csi-nfs-node
+    --timeout={{ nfs_ready_timeout }}s
+  changed_when: false
 
-- name: Create NFS Storage Class
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: storage.k8s.io/v1
-      kind: StorageClass
-      metadata:
-        name: nfs-csi
-      provisioner: nfs.csi.k8s.io
-      parameters:
-        server: "{{ morpheus['customOptions']['nfs_server_ip'] }}"
-        share: "{{ morpheus['customOptions']['nfs_share_path'] }}"
-      reclaimPolicy: Delete
-      volumeBindingMode: Immediate
-      mountOptions:
-        - nfsvers=3
+- name: Write the storage class manifest
+  template:
+    src: nfs-storage-class.yml.j2
+    dest: "{{ ansible_env.HOME }}/nfs-storage-class.yml"
+    mode: '0644'
 
-- name: Verify Storage Class creation
-  kubernetes.core.k8s_info:
-    kind: StorageClass
-    name: nfs-csi
-  register: sc_status
+- name: Create the NFS storage class
+  block:
+    - name: Apply the storage class
+      command: >-
+        kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+        apply -f {{ ansible_env.HOME }}/nfs-storage-class.yml
+      register: nfs_sc_apply
+      changed_when: nfs_sc_apply.stdout is search('created|configured')
 
-- name: Display Storage Class status
+  rescue:
+    # StorageClass parameters are immutable, so a changed NFS server or share can only be
+    # applied by replacing the object. Existing PVs keep working without their class.
+    - name: Delete the existing storage class
+      command: >-
+        kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+        delete storageclass {{ nfs_storage_class_name }} --ignore-not-found
+      changed_when: true
+
+    - name: Apply the storage class again
+      command: >-
+        kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+        apply -f {{ ansible_env.HOME }}/nfs-storage-class.yml
+      changed_when: true
+
+- name: Read back the storage class
+  command: >-
+    kubectl --kubeconfig {{ k8s_admin_kubeconfig }}
+    get storageclass {{ nfs_storage_class_name }}
+  register: nfs_sc_state
+  changed_when: false
+
+- name: Show the storage class
   debug:
-    var: sc_status
+    var: nfs_sc_state.stdout_lines
