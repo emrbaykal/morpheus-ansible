@@ -34,11 +34,21 @@
     label: "{{ item.item }}"
   when: item.stdout | trim == ''
 
+# Explicit, because a mount point created on its own would give this directory the same
+# restrictive mode and the service user could not traverse it.
+- name: Create the data root
+  file:
+    path: "{{ rustfs_data_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Create the mount points
   file:
     path: "{{ rustfs_data_root }}/rustfs{{ index }}"
     state: directory
-    mode: '0750'
+    mode: '0755'
   loop: "{{ rustfs_disks.stdout_lines }}"
   loop_control:
     index_var: index
